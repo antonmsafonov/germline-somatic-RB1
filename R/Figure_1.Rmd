@@ -5,18 +5,20 @@ date: "2025-12-15"
 ---
 
 ```{r load_packages_functions, include=FALSE}
+library(dplyr)
+library(readr)
+library(magrittr)
+library(tidyr)
+library(knitr)
+library(tidyverse)
 library(jsonlite)
 library(exact2x2)
 library(ggplot2)
-library(dplyr)
-library(tidyr)
 library(gplots)
 library(logistf)
 library(data.table)
 library(ggrepel)
 library(gridExtra)
-library(knitr)
-library(tidyverse)
 library(ComplexHeatmap)
 library(RColorBrewer)
 xfun::pkg_load2(c("htmltools", "mime"))
@@ -25,8 +27,10 @@ colMax <- function(data) sapply(data, max, na.rm = TRUE)
 numextract <- function(string){
 str_extract(string, "\\-*\\d+\\.*\\d*")}
 
-d.ann.w <- read.csv("/Users/boscoll/Downloads/Code_Supp_table_csvs_for_verification/Supp_Fig1a_ANON.csv")
-d.ann.w <- d.ann.w %>% select(-X, -X.1) %>% rename(Patient.ID = Anonymized.ID)
+d.ann.w <- readr::read_csv(file = "../data/Supp_Fig1a_ANON.csv", col_names = TRUE, col_types = cols(.default = col_character())) %>%
+	   readr::type_convert() %>%
+	   dplyr::select(-X, -X1) %>%
+	   dplyr::rename(Patient.ID = Anonymized.ID)
 ```
 
 ```{r create_gl_arrays, include = FALSE}
