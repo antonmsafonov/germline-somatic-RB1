@@ -1,0 +1,6 @@
+.*.tmp
+*.pyc
+*.svg
+.DS_Store
+.Rapp.history
+
