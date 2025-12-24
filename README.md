@@ -7,3 +7,6 @@
 &nbsp;
 
 ![Front page](https://someurl)
+
+
+```rmarkdown::render("Figure_1.Rmd", output_dir="../res/")```
