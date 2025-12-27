@@ -1,7 +1,11 @@
 ---
-title: "Fig3_panels"
+title: "Figure 3 panels"
+authors:
+  - Anton Safonov
+  - Luca Boscolo Bielo
+  - David Brown
 output: html_document
-date: "2025-12-16"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
 ```{r load_packages_functions, include=FALSE}
@@ -24,7 +28,6 @@ library(RColorBrewer)
 library(lubridate)
 library(survival)
 library(survminer)
-library(openxlsx)
 xfun::pkg_load2(c("htmltools", "mime"))
 `%notin%` = function(x,y) !(x %in% y)
 colMax <- function(data) sapply(data, max, na.rm = TRUE)
@@ -34,7 +37,7 @@ str_extract(string, "\\-*\\d+\\.*\\d*")}
 ```
 
 ```{r figure_3a, include=FALSE, echo = FALSE}
-coloh <- read.csv("~/Desktop/Nature_Final_analysis/Supp_Fig3a_RB1_B2_LOH_ANON.csv")
+coloh <- read.csv("../data/Supp_Fig3a_RB1_B2_LOH_ANON.csv")
 
 coloh <- coloh %>% rename(sample = Patient.ID)
 rb1_lcn1 <- coloh %>% filter(BRCA2 == "gBRCA2_PV") %>% select(-BRCA2)
@@ -42,7 +45,6 @@ rb1_lcn2 <- coloh %>% filter(BRCA2 == "gWT") %>% select(-BRCA2)
 
 n1 = length(unique(rb1_lcn1$sample))
 
-### Median position by band
 band_median <- rb1_lcn1 %>% 
   group_by(band) %>% 
   mutate(band_median = median(start, end, na.rm = TRUE)) %>%
@@ -107,20 +109,20 @@ p <- ggplot(
       "Other" = "grey80"
     )
   ) +
+  theme_classic() + 
   ylab("Proportion of LOH (%)") +
-  theme_gray() +
   theme(
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(), 
     axis.title.x = element_blank(),
+    axis.line.x = element_blank(), 
     axis.text.y = element_text(size = 15, colour = "black"),
     text = element_text(size = 14, colour = "black"),
     plot.title = element_text(size = 14, colour = "black"),
     legend.text = element_text(size = 14, colour = "black"),
     legend.title = element_blank()
-  )
+  ) 
 
-# Compare whether co-occurrence of RB1 and BRCA2 LOH is dependent on gBRCA2 status
 coloh <- coloh %>% filter(hgnc %in% c("RB1", "BRCA2"))
 coloh <- coloh %>% mutate(loh = case_when(lcn == "0" ~ "1", is.na(lcn) ~ "NA", lcn == "NF" ~ "NA", TRUE ~ "0"))
 coloh.na <- coloh %>% filter(loh == "NA") %>% pull(sample)
@@ -144,7 +146,7 @@ fisher.exact(table(coloh.compare$GL, coloh.compare$coloh))
 ```
 
 ```{r fig_3bci, include=FALSE}
-clin_t <- read.csv("~/Desktop/Nature_Final_analysis/Supp_Fig3bc_PFS_firstline_ANON.csv")
+clin_t <- read.csv("../data/Supp_Fig3bc_PFS_firstline_ANON.csv")
 cdk1 <- clin_t
 colnames(cdk1) <- c("Sample.ID", "Patient.ID", "RB1.tcn", "RB1.lcn", "RB1.LOH", "rb1_ascn", "ET.partner", "Treatment.Regimen", "Reason.Stop", "Tx.Line", "PFS.event", "PFS.time.months", "fga", "wgd_bin", "os.event", "time1", "time2", "age.at.dx")
 
@@ -188,30 +190,27 @@ summary(coxph(Surv(time1, time2, os.event) ~ ET.partner + RB1.LOH, data = cdk1))
 cdk1 <- cdk1 %>% mutate(rb1_ascn = factor(rb1_ascn, levels = c("Heterozygous", "Other_LOH", "Het_loss")))
 #OS - unadjusted by FGA, WGD
 os.un <- coxph(Surv(time1, time2, os.event) ~ rb1_ascn + ET.partner, data = cdk1)
-t.os.un <- tidy(os.un, exponentiate = TRUE, conf.int = TRUE) %>% filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>% select(term, estimate, p.value, conf.low, conf.high) %>% mutate(analysis = "OS_univariate")
+t.os.un <- broom::tidy(os.un, exponentiate = TRUE, conf.int = TRUE) %>% filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>% select(term, estimate, p.value, conf.low, conf.high) %>% mutate(analysis = "OS_univariate")
 
 #OS - adjusted by FGA, WGD
 os.adj <- coxph(Surv(time1, time2, os.event) ~ rb1_ascn + ET.partner + wgd_bin + fga, data = cdk1)
-t.os.adj <- tidy(os.adj, exponentiate = TRUE, conf.int = TRUE) %>% filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>% select(term, estimate, p.value, conf.low, conf.high) %>% mutate(analysis = "OS_multivariate")
+t.os.adj <- broom::tidy(os.adj, exponentiate = TRUE, conf.int = TRUE) %>% filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>% select(term, estimate, p.value, conf.low, conf.high) %>% mutate(analysis = "OS_multivariate")
 
 #PFS - unadjusted by FGA, WGD
 pfs.un <- coxph(Surv(PFS.time.months, PFS.event) ~ rb1_ascn + ET.partner, data = cdk1)
-t.pfs.un <- tidy(pfs.un, exponentiate = TRUE, conf.int = TRUE) %>% filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>% select(term, estimate, p.value, conf.low, conf.high) %>% mutate(analysis = "PFS_univariate")
+t.pfs.un <- broom::tidy(pfs.un, exponentiate = TRUE, conf.int = TRUE) %>% filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>% select(term, estimate, p.value, conf.low, conf.high) %>% mutate(analysis = "PFS_univariate")
 #PFS - adjusted by FGA, WGD
 pfs.adj <- coxph(Surv(PFS.time.months, PFS.event) ~ rb1_ascn + ET.partner+ wgd_bin + fga, data = cdk1)
-t.pfs.adj <- tidy(pfs.adj, exponentiate = TRUE, conf.int = TRUE) %>% filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>% select(term, estimate, p.value, conf.low, conf.high) %>% mutate(analysis = "PFS_multivariate")
+t.pfs.adj <- broom::tidy(pfs.adj, exponentiate = TRUE, conf.int = TRUE) %>% filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>% select(term, estimate, p.value, conf.low, conf.high) %>% mutate(analysis = "PFS_multivariate")
 
 ascn_outcomes_for_forest <- rbind(t.pfs.un, t.pfs.adj)
 ascn_outcomes_for_forest <- rbind(ascn_outcomes_for_forest, t.os.un)
 ascn_outcomes_for_forest <- rbind(ascn_outcomes_for_forest, t.os.adj)
 ascn_outcomes_for_forest <- ascn_outcomes_for_forest %>% mutate(ascn = substr(term, 9, nchar(term))) %>% select(-term)
-
-ascn_outcomes
-
 ```
 
 ```{r fig 3g, include = FALSE}
-all.pw2.plus <- read.csv("~/Desktop/Nature_Final_analysis/Supp_Fig3g_ascn_pre_post_ANON.csv")
+all.pw2.plus <- read.csv("../data/Supp_Fig3g_ascn_pre_post_ANON.csv")
 all.pw2.plus <- all.pw2.plus %>% select(-X) %>% rename(Sample = Anonymized.ID)
 
 {get_type_fun = function(x) strsplit(x, ";")[[1]]
@@ -304,7 +303,7 @@ col.ann <- list(rb1_ascn = c("Het_loss" = brewer.pal(4, "BuPu")[3], "Other_LOH" 
 }
 
 ht_opt$COLUMN_ANNO_PADDING = unit(8, "mm")
-op_pre_post <- oncoPrint(as.matrix(abt.plus), alter_fun = alter_fun, col = col_op, column_order = samp.order, row_names_side = "left", pct_side = "right", row_names_gp = gpar(fontsize = 12), 
+op_pre_post <- oncoPrint(as.matrix(abt.plus), alter_fun = alter_fun, top_annotation = NULL, col = col_op, column_order = samp.order, row_names_side = "left", pct_side = "right", row_names_gp = gpar(fontsize = 12), 
                          
                        column_split = all.pw2.plus$rb1_ascn, column_gap = unit(6, "mm"),  
                         #row_split = row_cuts, 
@@ -315,13 +314,13 @@ op_pre_post <- oncoPrint(as.matrix(abt.plus), alter_fun = alter_fun, col = col_o
                          column_title = "Pre-post CDK4/6 samples ", 
                          heatmap_legend_param = heatmap_legend_param,
                          alter_fun_is_vectorized = TRUE)
-pdf(file = "heatmap_ascn.pdf", width = 50, height = 8)
+# pdf(file = "heatmap_ascn.pdf", width = 50, height = 8)
 draw(op_pre_post, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
-dev.off()
+# dev.off()
 ```
 
 ```{r figure_3k, include = FALSE, echo = FALSE}
-rb1.con.hr <- read.csv("~/Desktop/Nature_Final_analysis/Supp_Fig3k_RB1_cons_final_ANON.csv")
+rb1.con.hr <- read.csv("../data/Supp_Fig3k_RB1_cons_final_ANON.csv")
 rb1.con.hr <- rb1.con.hr %>% select(-X.1, -X)
 
 colnames(rb1.con.hr) <- c("Patient.ID", "Alteration", "B2")
@@ -371,7 +370,7 @@ pie_b2 <- pie(con_freq_b2$prop, col = my_cols_b2, labels = con_freq_b2$Alteratio
 ```
 
 ```{r figure_3l, include = FALSE, echo = FALSE}
-cdk_b2_all <- read.csv("~/Desktop/Nature_Final_analysis/Supp_Fig2ab_CDK46_PFS_ANON.csv")
+cdk_b2_all <- read.csv("../data/Supp_Fig2ab_CDK46_PFS_ANON.csv")
 cdk_b2_all <- cdk_b2_all %>% select(-X)
 colnames(cdk_b2_all) <- c("Patient.ID", "Tx.Line", "time.months", "event", "ET_partner", "B2", "cohort", "RB1_LOH")
 
@@ -394,7 +393,7 @@ xlim = c(0,72))
 ```
 
 ```{r figure_3m, include = FALSE, echo = FALSE}
-tsg.g <- read.csv("~/Desktop/Nature_Final_analysis/Supp_Fig3m_TSG_gain_pre_post_ANON.csv")
+tsg.g <- read.csv("../data/Supp_Fig3m_TSG_gain_pre_post_ANON.csv")
 tsg.g <- tsg.g %>% select(-X) 
 
 tbl_counts <- tsg.g %>%

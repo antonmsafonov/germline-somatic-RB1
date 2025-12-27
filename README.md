@@ -1,4 +1,4 @@
-# Tumor suppressor heterozygosity and homologous recombination deficiency mediate resistance to front-line therapy in breast cancer 
+# Allelic imbalance and HR deficiency drive therapy resistance in breast cancer 
 
 ## Safonov *et al.*
 ### https://someurl
