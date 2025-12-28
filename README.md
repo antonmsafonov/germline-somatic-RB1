@@ -12,5 +12,4 @@
 ```
 git clone https://github.com/antonmsafonov/germline-somatic-RB1.git
 cd germline-somatic-RB1/R
-unzip data/Archive.zip -d data/
 ```

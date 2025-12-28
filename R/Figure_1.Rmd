@@ -1,5 +1,5 @@
 ---
-title: "Germline-Somatic Interaction from Anonymized Data"
+title: "Germline-Somatic Interaction from Anonymized Data - Figure 1"
 authors:
   - Anton Safonov
   - Luca Boscolo Bielo
@@ -34,13 +34,10 @@ library("foreach")
 library("parallel")
 library("doMC")
 
-`%notin%` <- function(x,y) { !(x %in% y) }
+'%notin%' <- function(x,y) { !(x %in% y) }
 'colMax' <- function(data) { sapply(data, max, na.rm = TRUE) }
 'numextract' <- function(string) { str_extract(string, "\\-*\\d+\\.*\\d*") }
 'returnlog' <- function(x, y, i) {
-	# x = df.all
-	# y = logx
-	# i = i
 	res = c(colnames(x)[i+4], 
 		exp(y$coefficients[[2]]),
 		exp(y$ci.lower[[2]]),
@@ -58,7 +55,7 @@ registerDoMC(8)
 
 d.ann.w = readr::read_csv(file = "../data/Supp_Fig1a_ANON.csv", col_names = TRUE, col_types = cols(.default = col_character())) %>%
 	  readr::type_convert() %>%
-	  dplyr::select(-`...1`, -X) %>%
+	  dplyr::select(-`X1`, -X) %>%
 	  dplyr::rename(Patient.ID = Anonymized.ID) %>%
 	  dplyr::mutate(GL_WT = as.integer(rowSums(across(c(GL_BRCA1, GL_BRCA2, GL_CHEK2, GL_ATM, GL_PALB2)), na.rm = TRUE) == 0)) %>%
 	  dplyr::relocate(GL_WT, .after = GL_PALB2)

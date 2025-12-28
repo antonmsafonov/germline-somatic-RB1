@@ -1,5 +1,5 @@
 ---
-title: "Figure 2 panels"
+title: "Germline-Somatic Interaction from Anonymized Data - Figure 2"
 authors:
   - Anton Safonov
   - Luca Boscolo Bielo
@@ -9,38 +9,58 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
 ```{r load_packages_functions, include=FALSE}
-library(dplyr)
-library(readr)
-library(magrittr)
-library(tidyr)
-library(knitr)
-library(tidyverse)
-library(jsonlite)
-library(exact2x2)
-library(ggplot2)
-library(gplots)
-library(logistf)
-library(data.table)
-library(ggrepel)
-library(gridExtra)
-library(ComplexHeatmap)
-library(RColorBrewer)
-library(lubridate)
-library(survival)
-library(survminer)
-xfun::pkg_load2(c("htmltools", "mime"))
-`%notin%` = function(x,y) !(x %in% y)
-colMax <- function(data) sapply(data, max, na.rm = TRUE)
-numextract <- function(string){
-str_extract(string, "\\-*\\d+\\.*\\d*")}
+library('dplyr')
+library('readr')
+library('magrittr')
+library('tidyr')
+library('knitr')
+library('tidyverse')
+library('jsonlite')
+library('exact2x2')
+library('ggplot2')
+library('gplots')
+library('logistf')
+library('data.table')
+library('ggrepel')
+library('gridExtra')
+library('ComplexHeatmap')
+library('RColorBrewer')
+library('lubridate')
+library('survival')
+library('survminer')
+library('htmltools')
+library('mime')
+library("foreach")
+library("parallel")
+library("doMC")
+
+'%notin%' <- function(x,y) { !(x %in% y) }
+'colMax' <- function(data) { sapply(data, max, na.rm = TRUE) }
+'numextract' <- function(string) { str_extract(string, "\\-*\\d+\\.*\\d*") }
+'returnlog' <- function(x, y, i) {
+	res = c(colnames(x)[i+4], 
+		exp(y$coefficients[[2]]),
+		exp(y$ci.lower[[2]]),
+		exp(y$ci.upper[[2]]),
+		y$prob[[2]],
+		sum(x[, i+4])/dim(x)[1]*100,
+		sum(x[x$GL == 1,i+4])/dim(x[x$GL == 1, ])[1]*100,
+		sum(x[x$GL == 1,i+4]),
+		exp(logistf(GL ~ x[,i+4], data=x)$coefficients[[2]]),
+		logistf(GL ~ x[,i+4], data=x)$prob[[2]])
+	return(invisible(res))
+}
+
+registerDoMC(8)
 
 ```
 
 ```{r figure_2ab, include=FALSE, echo = FALSE}
-cdk_b2_all <- read.csv("../data/Supp_Fig2ab_CDK46_PFS_ANON.csv")
-cdk_b2_all <- cdk_b2_all %>% select(-X)
-cdk_b2_all <- cdk_b2_all %>% distinct()
-colnames(cdk_b2_all) <- c("Patient.ID", "Tx.Line", "time.months", "event", "ET_partner", "B2", "cohort", "RB1_LOH")
+cdk_b2_all = readr::read_csv(file = "../data/Supp_Fig2ab_CDK46_PFS_ANON.csv", col_names = TRUE, col_types = cols(.default = col_character())) %>%
+	     readr::type_convert() %>%
+	     dplyr::select(-X1) %>%
+	     dplyr::distinct() %>%
+	     dplyr::rename_all( function(x) { c("Patient.ID", "Tx.Line", "time.months", "event", "ET_partner", "B2", "cohort", "RB1_LOH") })
 
 cdk_b2_all <- cdk_b2_all %>% mutate(Tx.Line = as.numeric(Tx.Line)) 
 cdk_b2_1 <- cdk_b2_all %>% filter(Tx.Line == 1)
