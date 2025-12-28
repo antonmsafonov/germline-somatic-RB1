@@ -1,7 +1,11 @@
 ---
 title: "Figure 2 panels"
+authors:
+  - Anton Safonov
+  - Luca Boscolo Bielo
+  - David Brown
 output: html_document
-date: "2025-12-16"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
 ```{r load_packages_functions, include=FALSE}
@@ -24,7 +28,6 @@ library(RColorBrewer)
 library(lubridate)
 library(survival)
 library(survminer)
-library(openxlsx)
 xfun::pkg_load2(c("htmltools", "mime"))
 `%notin%` = function(x,y) !(x %in% y)
 colMax <- function(data) sapply(data, max, na.rm = TRUE)
@@ -34,7 +37,7 @@ str_extract(string, "\\-*\\d+\\.*\\d*")}
 ```
 
 ```{r figure_2ab, include=FALSE, echo = FALSE}
-cdk_b2_all <- read.csv("~/Desktop/Nature_Final_analysis/Supp_Fig2ab_CDK46_PFS_ANON.csv")
+cdk_b2_all <- read.csv("../data/Supp_Fig2ab_CDK46_PFS_ANON.csv")
 cdk_b2_all <- cdk_b2_all %>% select(-X)
 cdk_b2_all <- cdk_b2_all %>% distinct()
 colnames(cdk_b2_all) <- c("Patient.ID", "Tx.Line", "time.months", "event", "ET_partner", "B2", "cohort", "RB1_LOH")
@@ -79,7 +82,7 @@ summary(coxph(Surv(time.months, event) ~ B2 + ET_partner + Tx.Line.c, data = cdk
 ```
 
 ```{r figure_2d, include = FALSE, echo = FALSE}
-all.lines <- read.csv("~/Desktop/Nature_Final_analysis/Supp_Fig2d_swimmer_ANON.csv")
+all.lines <- read.csv("../data/Supp_Fig2d_swimmer_ANON.csv")
 
 col_map <- c("cdk" = "#4271D6", 
              "parp" = "#00B26E",
@@ -92,16 +95,14 @@ all.lines <- all.lines %>% rename(End.Date.norm = Deidentified_End_Date)
 
 swimmer_plot <- ggplot(all.lines, aes(y = index)) +
   
-  # Color mapping for cdk and parp rectangles
   scale_fill_manual(values = c(
     "cdk"  = "#f16b6c",
     "parp" = "#6d90ca"
   )) +
   
-  theme_bw() +
+  theme_classic() +
   theme(legend.position = "none") +
   
-  # Treatment duration rectangles 
   geom_rect(
     aes(
       xmin = Start.Date.norm,
@@ -114,7 +115,6 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
     color = "black"
   ) +
   
-  # Disease progression
   geom_point(
     data = subset(all.lines,
                   Reason.Stop == "Disease Progression" &
@@ -125,7 +125,6 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
     size = 3.0
   ) +
   
-  # MD preference / Toxicity
   geom_point(
     data = subset(all.lines,
                   Reason.Stop %in% c("MD Preference", "Toxicity") &
@@ -136,7 +135,6 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
     size = 3.0
   ) +
   
-  # Ongoing
   geom_segment(
     data = subset(all.lines,
                   Reason.Stop == "Ongoing" &
@@ -150,11 +148,10 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
     arrow = arrow(length = unit(0.2, "cm"))
   ) +
   
-  # --- Best Response points  ---
   geom_point(
     data = subset(all.lines, Rapid.Prog == 0 & Best.Response == "CR"),
     aes(x = Scan.Date.Norm, y = index),
-    color = "#6b8590",
+    color = "#FFFDEC",
     shape = 19,
     size = 3
   ) +
@@ -168,7 +165,7 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
   geom_point(
     data = subset(all.lines, Rapid.Prog == 0 & Best.Response == "SD"),
     aes(x = Scan.Date.Norm, y = index),
-    color = "#FFFDEC",
+    color = "#6b8590",
     shape = 19,
     size = 3
   ) +
@@ -199,7 +196,6 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
     size = 4.5
   ) +
   
-  # LOH status
   geom_point(
     data = subset(all.lines, Tx.Type == "cdk" & LOH_status == "AI_LOH_ALT"),
     aes(x = -4, y = index),
@@ -225,7 +221,6 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
     size = 4.5
   ) +
   
-  # CDK46_type
   geom_point(
     data = subset(all.lines, Tx.Type == "cdk" & CDK == "Palbociclib"),
     aes(x = -6, y = index),
@@ -251,7 +246,6 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
     size = 4.5
   ) +
   
-  # ET partner
   geom_point(
     data = subset(all.lines, Tx.Type == "cdk" & AI.SERD == "AI"),
     aes(x = -8, y = index),
@@ -269,7 +263,6 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
     size = 4.5
   ) +
   
-  # Prior platinum
   geom_point(
     data = subset(all.lines, Tx.Type == "cdk" & Interim.Platinum == 1),
     aes(x = -10, y = index),
@@ -285,7 +278,12 @@ swimmer_plot <- ggplot(all.lines, aes(y = index)) +
     color = "black",
     shape = 22,
     size = 4.5
-  )
+  ) + 
+  theme(axis.text.y = element_blank(), 
+        axis.line.y = element_blank(), 
+        axis.ticks = element_blank()) + 
+  ylab("") + 
+  xlab("Time (months)")
 
 alc <- all.lines %>% select(index, Tx.Type, Tx.Line, deidentified_time, event, Reason.Stop) %>% rename(time = deidentified_time)
 alc <- alc %>% filter(Tx.Type %in% c("cdk", "parp"))
@@ -296,14 +294,13 @@ alc <- alc %>% mutate(event = case_when(is.na(event)~ 0, TRUE ~ event))
 lines.cdk.parp <- coxph(Surv(time,event) ~ Tx.Type + strata(index), data= alc)
 summary(lines.cdk.parp)
 
-# response comparison
 rc <- all.lines %>% select(index, Tx.Type, Best.Response) %>% rename(response = Best.Response) %>% filter(!is.na(response)) %>% filter(Tx.Type %in% c("cdk", "parp")) %>% filter(response != "No_scan")
 rc <- rc %>% mutate(OR = case_when(response %in% c("PR", "CR") ~ 1, TRUE ~ 0))
 fisher.exact(table(rc$OR, rc$Tx.Type))
 ```
 
 ```{r pre_post_acquired_B2, include = FALSE, echo = FALSE}
-all.pw2.plus <- read.csv("~/Desktop/Nature_Final_analysis/Supp_Fig2g_pre_post_B2_ANON.csv")
+all.pw2.plus <- read.csv("../data/Supp_Fig2g_pre_post_B2_ANON.csv")
 all.pw2.plus <- all.pw2.plus %>% select(-X) %>% rename(Patient_Anonymized = Anonymized.ID)
 
 {get_type_fun = function(x) strsplit(x, ";")[[1]]
@@ -414,9 +411,9 @@ op_pre_post <- oncoPrint(as.matrix(abt.plus), alter_fun = alter_fun, col = col_o
                          column_title = "Pre-post CDK4/6 samples ", 
                          heatmap_legend_param = heatmap_legend_param,
                          alter_fun_is_vectorized = TRUE)
-pdf(file = "heatmap_attempt_refined_12_17_25.pdf", width = 50, height = 8)
+# pdf(file = "heatmap_attempt_refined_12_17_25.pdf", width = 50, height = 8)
 draw(op_pre_post, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
-dev.off()
+# dev.off()
 
 b2.pw <- all.pw2.plus %>% filter(BRCA2 == "GL")
 wt.pw <- all.pw2.plus %>% filter(BRCA2 == "WT")

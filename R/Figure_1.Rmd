@@ -1,6 +1,6 @@
 ---
 title: "Germline-Somatic Interaction from Anonymized Data"
-author:
+authors:
   - Anton Safonov
   - Luca Boscolo Bielo
   - David Brown
@@ -28,7 +28,6 @@ library('RColorBrewer')
 library('lubridate')
 library('survival')
 library('survminer')
-library('openxlsx')
 library('htmltools')
 library('mime')
 library("foreach")
@@ -59,7 +58,7 @@ registerDoMC(8)
 
 d.ann.w = readr::read_csv(file = "../data/Supp_Fig1a_ANON.csv", col_names = TRUE, col_types = cols(.default = col_character())) %>%
 	  readr::type_convert() %>%
-	  dplyr::select(-X, -X1) %>%
+	  dplyr::select(-`...1`, -X) %>%
 	  dplyr::rename(Patient.ID = Anonymized.ID) %>%
 	  dplyr::mutate(GL_WT = as.integer(rowSums(across(c(GL_BRCA1, GL_BRCA2, GL_CHEK2, GL_ATM, GL_PALB2)), na.rm = TRUE) == 0)) %>%
 	  dplyr::relocate(GL_WT, .after = GL_PALB2)
@@ -144,11 +143,11 @@ for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
 
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 2%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -177,7 +176,7 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca2 = sm.log.results.c
 
-# lr.results.brca2 |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA2_all.csv')
+
 ```
 
 ```{r brca2_log_reg_er, echo = FALSE, message = FALSE}
@@ -189,16 +188,15 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 res = foreach (i=1:num.genes) %dopar% {
-	# logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
 	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
 	res = returnlog(x = df.all, y = logx, i = i)
 	return(res)
@@ -222,7 +220,6 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca2.er = sm.log.results.c
 
-# lr.results.brca2.er |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA2_er.csv')
 ```
 
 ```{r brca2_log_reg_tn, echo = FALSE, message = FALSE}
@@ -234,16 +231,15 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 res = foreach (i=1:num.genes) %dopar% {
-	# logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
 	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
 	res = returnlog(x = df.all, y = logx, i = i)
 	return(res)
@@ -267,7 +263,6 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca2.tn = sm.log.results.c
 
-# lr.results.brca2.tn |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA2_tn.csv')
 ```
 
 ```{r brca2_log_reg_loh, echo = FALSE, message = FALSE}
@@ -283,17 +278,16 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 res = foreach (i=1:num.genes) %dopar% {
 	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-	# logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
 	res = returnlog(x = df.all, y = logx, i = i)
 	return(res)
 } %>%
@@ -316,7 +310,6 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca2.bi = sm.log.results.c
 
-# lr.results.brca2.bi |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA2_all_bi.csv')
 ```
 
 ```{r brca2_log_reg_noloh, echo = FALSE, message = FALSE}
@@ -327,17 +320,16 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11)
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 res = foreach (i=1:num.genes) %dopar% {
 	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-	# logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   	res = returnlog(x = df.all, y = logx, i = i)
 	return(res)
 } %>%
@@ -374,17 +366,16 @@ df.all.n = df.all[,-c(1:4)]
 df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2]) {
-	df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+	df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 }
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 res = foreach (i=1: num.genes) %dopar% {
-	# logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
 	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   	res = returnlog(x = df.all, y = logx, i = i)
 	return(res)
@@ -408,7 +399,6 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca2.bi.er = sm.log.results.c
 
-# lr.results.brca2.bi.er |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA2_er_bi.csv')
 ```
 
 ```{r brca2_log_reg_noloh_er, echo = FALSE, message = FALSE}
@@ -419,16 +409,15 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 res = foreach (i=1:num.genes) %dopar% {
-	# logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
 	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   	res = returnlog(x = df.all, y = logx, i = i)
 	return(res)
@@ -468,16 +457,15 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 res = foreach (i=1:num.genes) %dopar% {
-	# logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
 	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   	res = returnlog(x = df.all, y = logx, i = i)
 	return(res)
@@ -501,7 +489,6 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca2.bi.tn = sm.log.results.c
 
-# lr.results.brca2.bi.tn |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA2_tn_bi.csv')
 ```
 
 ```{r brca2_log_reg_noloh_tn, echo = FALSE, message = FALSE}
@@ -512,16 +499,15 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11)
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 res = foreach (i=1:num.genes) %dopar% {
-	# logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
 	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   	res = returnlog(x = df.all, y = logx, i = i)
 	return(res)
@@ -555,17 +541,16 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2] 
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 for (i in 1: num.genes) {
 	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-	# logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
 	sm.log.results.c[i,1] = colnames(df.all)[i+4]
 	sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
 	sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -594,7 +579,6 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca1 = sm.log.results.c
 
-# lr.results.brca1 |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA1_all.csv')
 ```
 
 ```{r brca1_log_reg_tn, echo = FALSE, message = FALSE}
@@ -607,16 +591,15 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2] 
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 for (i in 1: num.genes) {
-	# logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
 	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
 	sm.log.results.c[i,1] = colnames(df.all)[i+4]
 	sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
@@ -646,7 +629,6 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca1.tn = sm.log.results.c
 
-# lr.results.brca1.tn |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA1_tn.csv')
 ```
 
 ```{r brca1_log_reg_er, echo = FALSE, message = FALSE}
@@ -661,16 +643,15 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2] 
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 for (i in 1: num.genes) {
-	# logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
 	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
 	sm.log.results.c[i,1] = colnames(df.all)[i+4]
 	sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
@@ -700,7 +681,6 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca1.er = sm.log.results.c
 
-# lr.results.brca1.er |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA1_er.csv')
 ```
 
 ```{r brca1_log_reg_loh, echo = FALSE, message = FALSE}
@@ -716,17 +696,16 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 for (i in 1: num.genes) {
 	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-	# logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
 	sm.log.results.c[i,1] = colnames(df.all)[i+4]
 	sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
 	sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -755,7 +734,6 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.brca1.bi = sm.log.results.c
 
-# lr.results.brca1.bi |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA1_all_bi.csv')
 ```
 
 ```{r brca1_log_reg_noloh, echo = FALSE, message = FALSE}
@@ -766,17 +744,16 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 for (i in 1: num.genes) {
 	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-	# logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
 	sm.log.results.c[i,1] = colnames(df.all)[i+4]
 	sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
 	sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -821,17 +798,16 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 
 for (i in 1: num.genes) {
-  # logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
   logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
   sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
@@ -854,7 +830,6 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 
 lr.results.brca1.bi.tn = sm.log.results.c
 
-# lr.results.brca1.bi.tn |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA1_tn_bi.csv')
 ```
 
 ```{r brca1_log_reg_noloh_tn, echo = FALSE}
@@ -865,11 +840,11 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11)
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -913,11 +888,11 @@ df.all.n = as.data.frame(df.all.n)
 for (i in 1:dim(df.all.n)[2]) {
 	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
 }
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -946,28 +921,25 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 lr.results.brca1.bi.er = sm.log.results.c
 
 
-# lr.results.brca1.bi.er |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_BRCA1_er_bi.csv')
 
-
-# Now all the patients who do not have LOH
+# Samples without LOH
 df.all = d.brca1.uni.er
 df.all.n = df.all[,-c(1:4)] 
 df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 
 for (i in 1: num.genes)
 {
-  # logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
   logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
@@ -1000,11 +972,11 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -1012,8 +984,7 @@ colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.
 for (i in 1: num.genes)
 {
   logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-  # logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
-  
+
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
   sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
   sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -1037,7 +1008,6 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 lr.results.chek2 = sm.log.results.c
 
 
-# lr.results.chek2 |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_chek2_all.csv')
 ```
 
 ```{r chek2_log_reg_loh, echo = FALSE}
@@ -1052,11 +1022,11 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -1064,8 +1034,7 @@ colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.
 for (i in 1: num.genes)
 {
   logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-  # logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
-  
+
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
   sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
   sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -1088,10 +1057,9 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 lr.results.chek2.bi = sm.log.results.c
 
 
-# lr.results.chek2.bi |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_chek2_all_bi.csv')
 
 
-# Now all the patients who do not have LOH
+# Samples without LOH
 df.all = d.chek2.uni
 df.all.n = df.all[,-c(1:4)] 
 df.all.n = as.data.frame(df.all.n)
@@ -1099,11 +1067,11 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -1111,8 +1079,7 @@ colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.
 for (i in 1: num.genes)
 {
   logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-  # logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
-  
+
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
   sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
   sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -1136,7 +1103,6 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 lr.results.chek2.uni = sm.log.results.c
 
 
-# lr.results.chek2.uni |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_chek2_all_uni.csv')
 
 ```
 
@@ -1148,19 +1114,17 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.2*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.2*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
-#df.all = df.all %>% select(-CHEK2)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 
 for (i in 1: num.genes)
 {
-  # logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
   logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
@@ -1184,9 +1148,6 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 
 lr.results.chek2.er = sm.log.results.c
 
-
-# lr.results.chek2.er |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_chek2_er.csv')
-
 ```
 
 ```{r chek2_log_reg_er_loh, include = FALSE, echo = FALSE}
@@ -1201,19 +1162,17 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.2*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.2*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
-#df.all = df.all %>% select(-CHEK2)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 
 for (i in 1: num.genes)
 {
-  # logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
   logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
@@ -1246,18 +1205,17 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.2*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.2*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 
 for (i in 1: num.genes)
 {
-  # logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
   logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
@@ -1281,7 +1239,6 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 
 lr.results.chek2.bi.er = sm.log.results.c
 
-# lr.results.chek2.bi.er |>  write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_chek2_er_bi.csv')
 
 ```
 
@@ -1294,12 +1251,11 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
-#df.all = df.all %>% select(-atm)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -1307,8 +1263,7 @@ colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.
 for (i in 1: num.genes)
 {
   logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-  # logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
-  
+
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
   sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
   sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -1332,7 +1287,6 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 lr.results.atm = sm.log.results.c
 
 
-# lr.results.atm |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_ATM1_all.csv')
 ```
 
 ```{r atm_log_reg_loh, echo = FALSE}
@@ -1344,11 +1298,11 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11)
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -1356,8 +1310,7 @@ colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.
 for (i in 1: num.genes)
 {
   logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-  # logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
-  
+
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
   sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
   sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -1380,11 +1333,7 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 lr.results.atm.bi = sm.log.results.c
 
 
-# lr.results.atm.bi |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_ATM_all_bi.csv')
-
-
-
-# Now all the patients who do not have LOH
+# Samples without LOH
 d.atm.uni = d.atm %>% filter(Patient.ID %notin% loh.atm)
 df.all = d.atm.uni
 df.all.n = df.all[,-c(1:4)] 
@@ -1393,11 +1342,11 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -1405,8 +1354,7 @@ colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.
 for (i in 1: num.genes)
 {
   logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-  # logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
-  
+
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
   sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
   sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -1439,19 +1387,17 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
-#df.all = df.all %>% select(-atm)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 
 for (i in 1: num.genes)
 {
-  # logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
   logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
@@ -1490,18 +1436,17 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 
 for (i in 1: num.genes)
 {
-  # logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
   logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
@@ -1526,28 +1471,24 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 lr.results.atm.bi.er = sm.log.results.c
 
 
-# lr.results.atm.bi.er |> write_csv('/Users/boscoll/Desktop/a.csv')
-
-
-# Now all the patients who do not have LOH
+# Samples without LOH
 df.all = d.atm.uni.er
 df.all.n = df.all[,-c(1:4)] 
 df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
 
 for (i in 1: num.genes)
 {
-  # logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
   logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
   
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
@@ -1571,8 +1512,6 @@ sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value <
 
 lr.results.atm.uni.er = sm.log.results.c
 
-
-
 ```
 
 # PALB2: 
@@ -1583,12 +1522,12 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 #df.all = df.all %>% select(-palb2)
 
 num.genes = dim(df.all.n)[2]
-sm.log.results.c = matrix(0, num.genes, 11) # -1 because we're filtering out the somatic version of the germline gene
+sm.log.results.c = matrix(0, num.genes, 11) 
 sm.log.results.c = data.frame(sm.log.results.c)
 colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
 
@@ -1596,8 +1535,7 @@ colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.
 for (i in 1: num.genes)
 {
   logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
-  # logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
-  
+
   sm.log.results.c[i,1] = colnames(df.all)[i+4]
   sm.log.results.c[i,2] = exp(logx$coefficients[[2]])
   sm.log.results.c[i,3] = exp(logx$ci.lower[[2]])
@@ -1618,11 +1556,8 @@ sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
 sm.log.results.c = sm.log.results.c %>% mutate(Significant = case_when(q.value < 0.10 ~ "Yes", TRUE ~ "No")) %>% mutate(Significant = as.factor(Significant))
 
 
-
 lr.results.palb2 = sm.log.results.c
 
-
-# lr.results.palb2 |> write_csv('/Users/boscoll/Desktop/Projects/Anton_RB1/data/Supplementary/logistic_regression_results_for_bubble_plot/LR_results_palb2_all.csv')
 ```
 
 ```{r palb2_log_reg_loh, echo = FALSE}
@@ -1636,7 +1571,7 @@ df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
@@ -1667,14 +1602,14 @@ sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
 lr.results.palb2.bi = sm.log.results.c
 
 
-# Now all the patients who do not have LOH
+# Samples without LOH
 df.all = d.palb2.uni
 df.all.n = df.all[,-c(1:4)] 
 df.all.n = as.data.frame(df.all.n)
 
 for (i in 1:dim(df.all.n)[2])
 {df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))}
-df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] # Filter to only include those samples above 1%
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
 df.all = data.frame(df.all[,c(1:4)], df.all.n)
 
 num.genes = dim(df.all.n)[2]
@@ -1962,9 +1897,8 @@ require(patchwork)
 # dev.off()
 ```
 
-# Generate ncoprints
+# Generate oncoprints
 ```{r generate_oncoprints, include = FALSE, echo = FALSE}
-# Assign graphics for each alteration type
 {
 get_type_fun = function(x) strsplit(x, ";")[[1]]
 
