@@ -55,7 +55,7 @@ registerDoMC(8)
 }
 ```
 
-```{r echo = FALSE, message = FALSE, fig.align = 'left', fig.height = 5, fig.width = 5, fig.cap = '**Figure 4e: Log2 Ratio<br><br>**'}
+```{r include=FALSE, echo = FALSE}
 
 START = 21230103
 END = 84220257
@@ -90,7 +90,9 @@ segmented_log2 = segmented_log2 %>%
 			 	Log2_Ratio < (-.5) & Log2_Ratio > (-1) ~ -1,
 			 	TRUE ~ Log2_Ratio
 		 ))
+```
 
+```{r echo = FALSE, message = FALSE, fig.align = 'left', fig.height = 5, fig.width = 5, fig.cap = '**Figure 4e: Log2 Ratio<br><br>**'}
 plot_ = smoothed_log2 %>%
 	dplyr::filter(Position >= START & Position <= END) %>%
 	ggplot(aes(x = Position, y = Log2_Ratio)) +
