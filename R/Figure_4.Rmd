@@ -40,9 +40,6 @@ library("copynumber")
 setup_ideograms(genome = "hg19")
 registerDoMC(8)
 
-START = 21230103
-END = 84220257
-
 'scientific_10' <- function(x) {
 	parse(text=gsub("+", "", gsub("e", " %.% 10^", scales::scientific_format()(x)), , fixed = TRUE))
 }
@@ -59,6 +56,10 @@ END = 84220257
 ```
 
 ```{r include=FALSE, echo = FALSE}
+
+START = 21230103
+END = 84220257
+
 smoothed_log2 = readr::read_csv(file = "../data/Supp_Fig4a_Log2_Ratio.csv.gz", col_names = TRUE, col_types = cols(.default = col_character())) %>%
 		readr::type_convert() %>%
 		data.frame() %>%
@@ -91,7 +92,7 @@ segmented_log2 = segmented_log2 %>%
 		 ))
 ```
 
-```{r echo = FALSE, message = FALSE, fig.align = 'left', fig.height = 5, fig.width = 5, fig.cap = '**Figure 4e**'}
+```{r echo = FALSE, message = FALSE, fig.align = 'left', fig.height = 5, fig.width = 5, fig.cap = '**Figure 4e: Log2 Ratio**'}
 plot_ = smoothed_log2 %>%
 	dplyr::filter(Position >= START & Position <= END) %>%
 	ggplot(aes(x = Position, y = Log2_Ratio)) +
@@ -129,4 +130,47 @@ plot_ = smoothed_log2 %>%
 	       color = FALSE, shape = FALSE, size = FALSE, fill = FALSE, alpha = FALSE)
 	
 suppressWarnings(grid.arrange(plot_))
+```
+
+```{r echo = FALSE, message = FALSE, fig.align = 'left', fig.height = 7, fig.width = 7, fig.cap = '<br><br>**Figure 4e: Sequence Alignments Exon 4--18 of RB1**'}
+options(ucscChromosomeNames=FALSE)
+
+url_bam_file = "../data/18bs1-Ribo-Mouse-2-Retreatment_chrN.bam"
+
+ideogram_track <- IdeogramTrack(genome = "hg19",
+				chromosome = "chr13",
+				background.title = "white",
+				fontcolor.title = "grey35")
+
+biomart_track <- BiomartGeneRegionTrack(genome = "hg19",
+				     chromosome = "chr13",
+				     name = "Ensembl!",
+				     background.title = "white",
+				     fontcolor.title = "grey35")
+
+alignment_track <- AlignmentsTrack(url_bam_file,
+				   isPaired = TRUE,
+				   name = " ",
+				   background.title = "white",
+				   fontcolor.title = "grey35",
+				   col.axis = "grey50",
+				   stacking = "squish")
+
+grid.newpage()
+pushViewport(viewport(layout = grid.layout(nrow = 1, ncol = 2)))
+
+pushViewport(viewport(layout.pos.col = 1))
+afrom = 48919100
+ato = 48920200
+res = suppressWarnings(plotTracks(c(ideogram_track, biomart_track, alignment_track),
+				  chromosome = "chr13", from = afrom, to = ato, ylim = c(0,100), sizes = c(.25, .45, 5), add = TRUE))
+popViewport()
+
+pushViewport(viewport(layout.pos.col = 2))
+afrom = 49015000
+ato = 49016100
+res = suppressWarnings(plotTracks(c(ideogram_track, biomart_track, alignment_track),
+				  chromosome = "chr13", from = afrom, to = ato, ylim = c(0,100), sizes = c(.25, .45, 5), add = TRUE))
+
+popViewport()
 ```
