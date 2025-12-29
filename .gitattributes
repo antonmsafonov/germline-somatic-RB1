@@ -1,2 +1,6 @@
 * linguist-vendored
 *.R linguist-vendored=R
+*.Rmd linguist-vendored=R
+*.py linguist-vendored=Python
+*.pynb linguist-vebdored=Python
+*.html linguist-detectable=false
