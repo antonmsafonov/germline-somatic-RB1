@@ -14,7 +14,7 @@ git clone https://github.com/antonmsafonov/germline-somatic-RB1.git
 cd germline-somatic-RB1/R
 ```
 
-#### Render Rmarkdowns in R
+#### Render markdowns in R
 ```
 library("rmarkdown")
 rmarkdown::render(input = "Figure_1.Rmd", output_dir = "../res/")
