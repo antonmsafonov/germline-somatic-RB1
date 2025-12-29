@@ -1,5 +1,5 @@
 ---
-title: "Germline-somatic interaction - Figure 2"
+title: "Germline-somatic interaction - Figure 4"
 author:
   - name: Anton Safonov, Luca Boscolo Bielo, David N Brown
 output:
