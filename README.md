@@ -10,22 +10,21 @@
 
 #### Clone repository
 ```
-> git clone https://github.com/antonmsafonov/germline-somatic-RB1.git
-> cd germline-somatic-RB1/R
+git clone https://github.com/antonmsafonov/germline-somatic-RB1.git
+cd germline-somatic-RB1/R
 ```
 
 #### Render markdowns in R
 ```
-> library("rmarkdown")
-> rmarkdown::render(input = "Figure_1.Rmd", output_dir = "../res/")
-> rmarkdown::render(input = "Figure_2.Rmd", output_dir = "../res/")
-> rmarkdown::render(input = "Figure_3.Rmd", output_dir = "../res/")
-> rmarkdown::render(input = "Figure_4.Rmd", output_dir = "../res/")
+library("rmarkdown")
+rmarkdown::render(input = "Figure_1.Rmd", output_dir = "../res/")
+rmarkdown::render(input = "Figure_2.Rmd", output_dir = "../res/")
+rmarkdown::render(input = "Figure_3.Rmd", output_dir = "../res/")
+rmarkdown::render(input = "Figure_4.Rmd", output_dir = "../res/")
 ```
 
 #### Required R libraries
 ```
-> sessionInfo()
 R version 4.0.2 (2020-06-22)
 Platform: x86_64-apple-darwin13.4.0 (64-bit)
 Running under: macOS  10.16
