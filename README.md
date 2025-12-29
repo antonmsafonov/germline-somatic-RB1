@@ -6,7 +6,7 @@
 &nbsp;
 &nbsp;
 
-![Front page](https://someurl)
+![Front page](https://github.com/antonmsafonov/germline-somatic-RB1/blob/repack/etc/splash.png)
 
 
 ```
