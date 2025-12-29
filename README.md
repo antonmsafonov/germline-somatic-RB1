@@ -31,7 +31,7 @@ Platform: x86_64-apple-darwin13.4.0 (64-bit)
 Running under: macOS  10.16
 
 Matrix products: default
-BLAS/LAPACK: /Users/davidbrown/.miniconda3/lib/libopenblasp-r0.3.10.dylib
+BLAS/LAPACK: libopenblasp-r0.3.10.dylib
 
 locale:
 [1] C
