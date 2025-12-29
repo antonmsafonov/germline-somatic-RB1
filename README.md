@@ -8,13 +8,13 @@
 
 ![Front page](https://github.com/antonmsafonov/germline-somatic-RB1/blob/repack/etc/splash.png)
 
-#### Istallation
+#### Clone repository
 ```
 git clone https://github.com/antonmsafonov/germline-somatic-RB1.git
 cd germline-somatic-RB1/R
 ```
 
-#### Execution in R
+#### Render Rmarkdowns in R
 ```
 library("rmarkdown")
 rmarkdown::render(input = "Figure_1.Rmd", output_dir = "../res/")
