@@ -23,7 +23,7 @@ rmarkdown::render(input = "Figure_3.Rmd", output_dir = "../res/")
 rmarkdown::render(input = "Figure_4.Rmd", output_dir = "../res/")
 ```
 
-#### Session info
+#### R session info
 ```
 R version 4.0.2 (2020-06-22)
 Platform: x86_64-apple-darwin13.4.0 (64-bit)
