@@ -1199,3 +1199,632 @@ sm.log.results.c = sm.log.results.c %>%
 
 lr.results.chek2.bi.er = sm.log.results.c
 ```
+
+<!-- ATM -->
+
+```{r atm_log_reg, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+df.all = d.atm
+df.all.n = df.all[,-c(1:4)] 
+df.all.n = as.data.frame(df.all.n)
+
+for (i in 1:dim(df.all.n)[2]) {
+	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
+}
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
+df.all = data.frame(df.all[,c(1:4)], df.all.n)
+
+num.genes = dim(df.all.n)[2]
+sm.log.results.c = matrix(0, num.genes, 11) 
+sm.log.results.c = data.frame(sm.log.results.c)
+colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
+
+res = foreach (i=1:num.genes) %dopar% {
+	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
+	res = tabf(x = df.all, y = logx, i = i)
+	return(res)
+} %>%
+do.call(rbind, .)
+sm.log.results.c[,-6] = res
+
+sig.label.brca2.gene = sm.log.results.c %>%
+		       dplyr::filter(p.value < 0.05 | freq.overall > 7)
+actual.sig.label = sm.log.results.c %>%
+		   dplyr::filter(p.value < 0.05)
+
+sm.log.results.c$q.value = p.adjust(sm.log.results.c$p.value, method = "BH")
+sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
+sm.log.results.c = sm.log.results.c %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant))
+
+lr.results.atm = sm.log.results.c
+```
+
+```{r atm_log_reg_loh, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+d.atm.bi = d.atm %>%
+	   dplyr::filter(Patient.ID %notin% noloh.atm)
+df.all = d.atm.bi
+df.all.n = df.all[,-c(1:4)] 
+df.all.n = as.data.frame(df.all.n)
+
+for (i in 1:dim(df.all.n)[2]) {
+	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
+}
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
+df.all = data.frame(df.all[,c(1:4)], df.all.n)
+
+num.genes = dim(df.all.n)[2]
+sm.log.results.c = matrix(0, num.genes, 11)
+sm.log.results.c = data.frame(sm.log.results.c)
+colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
+
+res = foreach (i=1:num.genes) %dopar% {
+	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
+	res = tabf(x = df.all, y = logx, i = i)
+	return(res)
+} %>%
+do.call(rbind, .)
+sm.log.results.c[,-6] = res
+
+sig.label.brca2.gene = sm.log.results.c %>%
+		       dplyr::filter(p.value < 0.05 | freq.overall > 7)
+actual.sig.label = sm.log.results.c %>%
+		   dplyr::filter(p.value < 0.05)
+
+sm.log.results.c$q.value = p.adjust(sm.log.results.c$p.value, method = "BH")
+sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
+sm.log.results.c = sm.log.results.c %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant))
+
+lr.results.atm.bi = sm.log.results.c
+```
+
+```{r atm_log_reg_noloh, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+d.atm.uni = d.atm %>%
+	    dplyr::filter(Patient.ID %notin% loh.atm)
+df.all = d.atm.uni
+df.all.n = df.all[,-c(1:4)] 
+df.all.n = as.data.frame(df.all.n)
+
+for (i in 1:dim(df.all.n)[2]) {
+	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
+}
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
+df.all = data.frame(df.all[,c(1:4)], df.all.n)
+
+num.genes = dim(df.all.n)[2]
+sm.log.results.c = matrix(0, num.genes, 11) 
+sm.log.results.c = data.frame(sm.log.results.c)
+colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
+
+res = foreach (i=1:num.genes) %dopar% {
+	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
+	res = tabf(x = df.all, y = logx, i = i)
+	return(res)
+} %>%
+do.call(rbind, .)
+sm.log.results.c[,-6] = res
+
+sig.label.brca2.gene = sm.log.results.c %>%
+		       dplyr::filter(p.value < 0.05 | freq.overall > 7)
+actual.sig.label = sm.log.results.c %>%
+		   dplyr::filter(p.value < 0.05)
+
+sm.log.results.c$q.value = p.adjust(sm.log.results.c$p.value, method = "BH")
+sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
+sm.log.results.c = sm.log.results.c %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant))
+
+lr.results.atm.uni = sm.log.results.c
+```
+
+```{r atm_log_reg_er, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+df.all = d.atm %>%
+	 dplyr::filter(Receptor.Status == "HR+/HER2-")
+df.all.n = df.all[,-c(1:4)] 
+df.all.n = as.data.frame(df.all.n)
+
+for (i in 1:dim(df.all.n)[2]) {
+	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
+}
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
+df.all = data.frame(df.all[,c(1:4)], df.all.n)
+
+num.genes = dim(df.all.n)[2]
+sm.log.results.c = matrix(0, num.genes, 11) 
+sm.log.results.c = data.frame(sm.log.results.c)
+colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
+
+res = foreach (i=1:num.genes) %dopar% {
+	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
+	res = tabf(x = df.all, y = logx, i = i)
+	return(res)
+} %>%
+do.call(rbind, .)
+sm.log.results.c[,-6] = res
+
+sig.label.brca2.gene = sm.log.results.c %>%
+		       dplyr::filter(p.value < 0.05 | freq.overall > 7)
+actual.sig.label = sm.log.results.c %>%
+		   dplyr::filter(p.value < 0.05)
+
+sm.log.results.c$q.value = p.adjust(sm.log.results.c$p.value, method = "BH")
+sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
+sm.log.results.c = sm.log.results.c %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant))
+
+lr.results.atm.er = sm.log.results.c
+```
+
+```{r atm_log_reg_loh_er, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+d.atm.bi.er = d.atm %>%
+	      dplyr::filter(Patient.ID %notin% noloh.atm) %>%
+	      dplyr::filter(Receptor.Status == "HR+/HER2-")
+d.atm.uni.er = d.atm %>%
+	       dplyr::filter(Patient.ID %notin% loh.atm) %>%
+	       dplyr::filter(Receptor.Status == "HR+/HER2-")
+                                 
+df.all = d.atm.bi.er
+df.all.n = df.all[,-c(1:4)] 
+df.all.n = as.data.frame(df.all.n)
+
+for (i in 1:dim(df.all.n)[2]) {
+	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
+}
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])] 
+df.all = data.frame(df.all[,c(1:4)], df.all.n)
+
+num.genes = dim(df.all.n)[2]
+sm.log.results.c = matrix(0, num.genes, 11) 
+sm.log.results.c = data.frame(sm.log.results.c)
+colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
+
+res = foreach (i=1:num.genes) %dopar% {
+	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
+	res = tabf(x = df.all, y = logx, i = i)
+	return(res)
+} %>%
+do.call(rbind, .)
+sm.log.results.c[,-6] = res
+
+sig.label.brca2.gene = sm.log.results.c %>%
+		       dplyr::filter(p.value < 0.05 | freq.overall > 7)
+actual.sig.label = sm.log.results.c %>%
+		   dplyr::filter(p.value < 0.05)
+
+sm.log.results.c$q.value = p.adjust(sm.log.results.c$p.value, method = "BH")
+sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
+sm.log.results.c = sm.log.results.c %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant))
+
+lr.results.atm.bi.er = sm.log.results.c
+```
+
+```{r atm_log_reg_noloh_er, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+df.all = d.atm.uni.er
+df.all.n = df.all[,-c(1:4)] 
+df.all.n = as.data.frame(df.all.n)
+
+for (i in 1:dim(df.all.n)[2]) {
+	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
+}
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
+df.all = data.frame(df.all[,c(1:4)], df.all.n)
+
+num.genes = dim(df.all.n)[2]
+sm.log.results.c = matrix(0, num.genes, 11) 
+sm.log.results.c = data.frame(sm.log.results.c)
+colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
+
+res = foreach (i=1:num.genes) %dopar% {
+	logx = logistf(GL ~ df.all[,i+4] + Sample.Type, pl = FALSE, data=df.all)
+	res = tabf(x = df.all, y = logx, i = i)
+	return(res)
+} %>%
+do.call(rbind, .)
+sm.log.results.c[,-6] = res
+
+sig.label.brca2.gene = sm.log.results.c %>%
+		       dplyr::filter(p.value < 0.05 | freq.overall > 7)
+actual.sig.label = sm.log.results.c %>%
+		   dplyr::filter(p.value < 0.05)
+
+sm.log.results.c$q.value = p.adjust(sm.log.results.c$p.value, method = "BH")
+sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
+sm.log.results.c = sm.log.results.c %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant))
+
+lr.results.atm.uni.er = sm.log.results.c
+```
+
+<!-- PALB2 -->
+
+```{r palb2_log_reg, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+df.all = d.palb2
+df.all.n = df.all[,-c(1:4)] 
+df.all.n = as.data.frame(df.all.n)
+
+for (i in 1:dim(df.all.n)[2]) {
+	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
+}
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
+df.all = data.frame(df.all[,c(1:4)], df.all.n)
+#df.all = df.all %>% select(-palb2)
+
+num.genes = dim(df.all.n)[2]
+sm.log.results.c = matrix(0, num.genes, 11) 
+sm.log.results.c = data.frame(sm.log.results.c)
+colnames(sm.log.results.c) = c("Somatic.Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq.overall", "freq.GL", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
+
+res = foreach (i=1:num.genes) %dopar% {
+	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
+	res = tabf(x = df.all, y = logx, i = i)
+	return(res)
+} %>%
+do.call(rbind, .)
+sm.log.results.c[,-6] = res
+
+sig.label.brca2.gene = sm.log.results.c %>%
+		       dplyr::filter(p.value < 0.05 | freq.overall > 7)
+actual.sig.label = sm.log.results.c %>%
+		   dplyr::filter(p.value < 0.05)
+
+sm.log.results.c$q.value = p.adjust(sm.log.results.c$p.value, method = "BH")
+sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
+sm.log.results.c = sm.log.results.c %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant))
+
+lr.results.palb2 = sm.log.results.c
+```
+
+```{r palb2_log_reg_loh, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+d.palb2.bi = d.palb2 %>%
+	     dplyr::filter(Patient.ID %notin% noloh.palb2)
+d.palb2.uni = d.palb2 %>%
+	      dplyr::filter(Patient.ID %notin% loh.palb2)
+
+df.all = d.palb2.bi
+df.all.n = df.all[,-c(1:4)] 
+df.all.n = as.data.frame(df.all.n)
+
+for (i in 1:dim(df.all.n)[2]) {
+	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
+}
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
+df.all = data.frame(df.all[,c(1:4)], df.all.n)
+
+num.genes = dim(df.all.n)[2]
+sm.log.results.c = matrix(0, num.genes, 10) 
+sm.log.results.c = data.frame(sm.log.results.c)
+colnames(sm.log.results.c) = c("Somatic Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
+
+res = foreach (i=1:num.genes) %dopar% {
+	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
+	res = tabf(x = df.all, y = logx, i = i)
+	return(res)
+} %>%
+do.call(rbind, .)
+sm.log.results.c[,-6] = res
+
+sig.label.palb2.bi = sm.log.results.c %>%
+		     dplyr::filter(p.value < 0.05 | freq > 7)
+sm.log.results.c$q.value = p.adjust(sm.log.results.c$p.value, method = "BH")
+sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
+sm.log.results.c = sm.log.results.c %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant))
+
+
+lr.results.palb2.bi = sm.log.results.c
+```
+
+```{r palb2_log_reg_noloh, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+df.all = d.palb2.uni
+df.all.n = df.all[,-c(1:4)] 
+df.all.n = as.data.frame(df.all.n)
+
+for (i in 1:dim(df.all.n)[2]) {
+	df.all.n[,i] = as.numeric(as.character(df.all.n[,i]))
+}
+df.all.n = df.all.n[,which(colSums(df.all.n) > 0.02*dim(df.all.n)[1])]
+df.all = data.frame(df.all[,c(1:4)], df.all.n)
+
+num.genes = dim(df.all.n)[2]
+sm.log.results.c = matrix(0, num.genes, 10) 
+sm.log.results.c = data.frame(sm.log.results.c)
+colnames(sm.log.results.c) = c("Somatic Variant", "OR", "Conf.Int.1", "Conf.Int.2", "p.value", "q.value", "freq", "num.coaltered.with.GL", "OR.univariate", "p.value.univariate")
+
+res = foreach (i=1:num.genes) %dopar% {
+	logx = logistf(GL ~ df.all[,i+4] + Receptor.Status + Sample.Type, pl = FALSE, data=df.all)
+	res = tabf(x = df.all, y = logx, i = i)
+	return(res)
+} %>%
+do.call(rbind, .)
+sm.log.results.c[,-6] = res
+
+sig.label.palb2.uni = sm.log.results.c %>%
+		      dplyr::filter(p.value < 0.05 | freq > 7)
+
+sm.log.results.c$q.value = p.adjust(sm.log.results.c$p.value, method = "BH")
+sm.log.results.c = sm.log.results.c[order(sm.log.results.c$p.value),]
+sm.log.results.c = sm.log.results.c %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant))
+
+lr.results.palb2.uni = sm.log.results.c
+```
+
+<!-- Figure 1b-d -->
+
+```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 8, fig.width = 8, fig.cap = '<br/>**Figure 1:** Volcano plots of enrichment analysis of gATM (top-left). (top-right) Similar to gATM, but depicting comparison of gBRCA1. (bottom-left) Similar to gATM, but depicting comparison of gBRCA2. (bottom-right) Similar to gBRCA2 using a subset of HR+/HER2- tumors'}
+
+### ATM
+sm.log.results.c = lr.results.atm %>%
+		   tidyr::as_tibble() %>%
+		   readr::type_convert() %>%
+		   dplyr::rename(Somatic.Mutation = Somatic.Variant) %>%
+		   dplyr::mutate(Somatic.Mutation = ifelse(Somatic.Mutation %in% c('CCND1', 'FGF4', 'FGF19', 'FGF3'), "11q13", Somatic.Mutation)) %>%
+		   dplyr::group_by(Somatic.Mutation) %>%
+		   dplyr::summarise(OR = mean(OR),
+				    Conf.Int.1 = mean(Conf.Int.1),
+				    Conf.Int.2 = mean(Conf.Int.2),
+				    p.value = mean(p.value),
+				    q.value = mean(q.value),
+				    freq = mean(freq.overall),
+				    num.coaltered.with.GL = mean(num.coaltered.with.GL),
+				    OR.univariate = mean(OR.univariate),
+				    .groups = "drop") %>%
+		   dplyr::arrange(p.value) %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant)) %>%
+		   dplyr::mutate(log2OR = log2(OR)) %>%
+		   dplyr::relocate(log2OR, .after = OR) %>%
+		   dplyr::mutate(Somatic.Mutation = case_when(
+			   		q.value < 0.1 ~ Somatic.Mutation, 
+			   		Somatic.Mutation == 'RB1' ~ Somatic.Mutation, 
+			   		TRUE ~ "NA"
+		   )) %>%
+		   readr::type_convert()
+
+sig.label = sm.log.results.c 
+
+plot_atm = sig.label %>%
+	   ggplot(mapping = aes(x = log2OR, y = -log10(q.value), color = Significant, size = freq)) +
+	   geom_point(stat = "identity", alpha = 0.4) +
+	   scale_size(range = c(1, 10), name = "Frequency (%)") + 
+	   scale_color_manual(values = c("Yes" = "blue", "No" = "gray45")) +
+	   scale_x_continuous(limits = c(-3.5, 3.5), 
+			      breaks = c(-3, -2, -1, 0, 1, 2, 3)) +
+	   scale_y_continuous(limits = c(0, 9),
+			      breaks = seq(1, 9, 2)) +
+	   xlab('') +
+	   ylab(expression(-log[10]('q value'))) +
+	   ggtitle(" ") +
+	   geom_text_repel(data = sig.label,
+			   mapping = aes(x = log2(OR), y = -log10(q.value), label = Somatic.Mutation),
+			   size = 4, nudge_y = 0.6, color = "black") + 
+	   geom_vline(xintercept = 0, color = "red") +
+	   geom_hline(yintercept = -log10(0.1), linetype = "dashed") +
+	   theme_bw() +
+	   theme(axis.title.x = element_text(size = 18),
+		 axis.title.y = element_text(size = 18),
+		 axis.text.x = element_text(size = 16),
+		 axis.text.y = element_text(size = 16),
+		 plot.title = element_text(hjust = 0.5, size = 24),
+		 plot.subtitle = element_text(hjust = 0.5, size = 18),
+		 legend.position = 'none',
+		 panel.grid.major = element_blank(),
+		 panel.grid.minor = element_blank())
+
+### BRCA2
+sm.log.results.c = lr.results.brca2 %>% 
+		   tidyr::as_tibble() %>%
+		   readr::type_convert() %>%
+		   dplyr::mutate(Somatic.Variant = ifelse(Somatic.Variant %in% c('CCND1', 'FGF4', 'FGF19', 'FGF3'), "11q13", Somatic.Variant)) %>%
+		   dplyr::group_by(Somatic.Variant) %>%
+		   dplyr::summarise(OR = mean(OR),
+				    Conf.Int.1 = mean(Conf.Int.1),
+				    Conf.Int.2 = mean(Conf.Int.2),
+				    p.value = mean(p.value),
+				    q.value = mean(q.value),
+				    freq = mean(freq.overall),
+				    num.coaltered.with.GL = mean(num.coaltered.with.GL),
+				    OR.univariate = mean(OR.univariate),
+				    .groups = "drop") %>%
+		   dplyr::arrange(p.value) %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		    )) %>%
+		    dplyr::mutate(Significant = as.factor(Significant)) %>%
+		    dplyr::mutate(log2OR = log2(OR)) %>%
+		    dplyr::relocate(log2OR, .after = OR) %>%
+		    dplyr::mutate(Somatic.Variant = if_else(q.value < 0.1, Somatic.Variant, "NA")) %>%
+		    readr::type_convert()
+
+sig.label = sm.log.results.c
+
+plot_brca2 = sig.label %>%
+	     ggplot(mapping = aes(x = log2OR, y = -log10(q.value), color = Significant, size = freq)) +
+	     geom_point(stat = "identity", alpha = 0.4) +
+	     scale_size(range = c(1, 10), name="Frequency (%)") + 
+	     scale_color_manual(values = c("Yes" = "blue", "No" = "gray45")) +
+	     scale_x_continuous(limits = c(-3.5, 3.5), 
+				breaks = c(-3, -2, -1, 0, 1, 2, 3)) +
+	     scale_y_continuous(limits = c(0, 9), 
+				breaks = seq(1, 9, 2)) +
+  	     xlab(expression(log[2]('Odds ratio'))) +
+	     ylab(expression(-log[10]('q value'))) +
+	     ggtitle(" ") +
+	     geom_text_repel(data = sig.label,
+			     mapping = aes(x = log2(OR), y = -log10(q.value), label = Somatic.Variant),
+			     size = 4, nudge_y = 0.6, color = "black") + 
+	     geom_vline(xintercept = 0, color = "red") +
+	     geom_hline(yintercept = -log10(0.1), linetype = "dashed") +
+	     theme_bw() +
+	     theme(axis.title.x = element_text(size = 18),
+		   axis.title.y = element_text(size = 18),
+		   axis.text.x = element_text(size = 16),
+		   axis.text.y = element_text(size=16),
+		   plot.title = element_text(hjust = 0.5, size = 24),
+		   plot.subtitle = element_text(hjust = 0.5, size = 18),
+		   legend.position  = 'none',
+		   panel.grid.major = element_blank(),
+		   panel.grid.minor = element_blank())
+
+### BRCA1
+sm.log.results.c = lr.results.brca1 %>%
+		   tidyr::as_tibble() %>%
+		   readr::type_convert() %>%
+		   dplyr::rename(Somatic.Mutation = Somatic.Variant) %>%
+		   dplyr::mutate(Somatic.Mutation = ifelse(Somatic.Mutation %in% c('CCND1', 'FGF4', 'FGF19', 'FGF3'), "11q13", Somatic.Mutation)) %>%
+		   dplyr::group_by(Somatic.Mutation) %>%
+		   dplyr::summarise(OR = mean(OR),
+				    Conf.Int.1 = mean(Conf.Int.1),
+				    Conf.Int.2 = mean(Conf.Int.2),
+				    p.value = mean(p.value),
+				    q.value = mean(q.value),
+				    freq = mean(freq.overall),
+				    num.coaltered.with.GL = mean(num.coaltered.with.GL),
+				    OR.univariate = mean(OR.univariate),
+				    .groups = "drop") %>%
+		   dplyr::arrange(p.value) %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			    	TRUE ~ "No"
+		    )) %>%
+		    dplyr::mutate(Significant = as.factor(Significant)) %>%
+		    dplyr::mutate(log2OR = log2(OR)) %>%
+		    dplyr::relocate(log2OR, .after = OR) %>%
+		    dplyr::mutate(Somatic.Mutation = case_when(
+			    		q.value < 0.1 ~ Somatic.Mutation, 
+			    		Somatic.Mutation == 'RB1' ~ Somatic.Mutation,
+			    		TRUE ~ "NA"
+		    )) %>%
+		    readr::type_convert()
+
+sig.label = sm.log.results.c 
+
+plot_brca1 = sig.label %>%
+	     ggplot(mapping = aes(x = log2OR, y = -log10(q.value), color = Significant, size = freq)) +
+	     geom_point(stat = "identity", alpha = 0.4) +
+	     scale_size(range = c(1, 10), name="Frequency (%)") + 
+	     scale_color_manual(values = c("Yes" = "blue", "No" = "gray45")) +
+	     scale_x_continuous(limits = c(-3.5, 3.5), 
+				breaks = c(-3, -2, -1, 0, 1, 2, 3)) +
+	     scale_y_continuous(limits = c(0, 9), 
+				breaks = seq(1, 9, 2)) +
+	     xlab('') +
+	     ylab('') + 
+	     ggtitle(" ") +
+	     geom_text_repel(data = sig.label,
+			     mapping = aes(x = log2(OR), y = -log10(q.value), label = Somatic.Mutation),
+			     size = 4, nudge_y = 0.6, color = "black") + 
+	     geom_vline(xintercept = 0, color = "red") +
+	     geom_hline(yintercept = -log10(0.1), linetype = "dashed") +
+	     theme_bw() +
+	     theme(axis.title.x = element_text(size = 18),
+		   axis.title.y = element_text(size=18),
+		   axis.text.x = element_text(size = 16),
+		   axis.text.y = element_text(size=16), 
+		   plot.title = element_text(hjust = 0.5, size = 24),
+		   plot.subtitle = element_text(hjust = 0.5, size = 18),
+		   legend.position = 'none',
+		   panel.grid.major = element_blank(),
+		   panel.grid.minor = element_blank())
+
+### BRCA2_ER
+sm.log.results.c = lr.results.brca2.er %>%
+		   tidyr::as_tibble() %>%
+		   readr::type_convert() %>%
+		   dplyr::mutate(Somatic.Variant = ifelse(Somatic.Variant %in% c('CCND1', 'FGF4', 'FGF19', 'FGF3'), "11q13", Somatic.Variant)) %>%
+		   dplyr::group_by(Somatic.Variant) %>%
+		   dplyr::summarise(OR = mean(OR),
+				    Conf.Int.1 = mean(Conf.Int.1),
+				    Conf.Int.2 = mean(Conf.Int.2),
+				    p.value = mean(p.value),
+				    q.value = mean(q.value),
+				    freq = mean(freq.overall),
+				    num.coaltered.with.GL = mean(num.coaltered.with.GL),
+				    OR.univariate = mean(OR.univariate),
+				    .groups = "drop") %>%
+		   dplyr::arrange(p.value) %>%
+		   dplyr::mutate(Significant = case_when(
+			   		q.value < 0.10 ~ "Yes",
+			   		TRUE ~ "No"
+		   )) %>%
+		   dplyr::mutate(Significant = as.factor(Significant)) %>%
+		   dplyr::mutate(log2OR = log2(OR)) %>%
+		   dplyr::relocate(log2OR, .after = OR) %>%
+		   dplyr::mutate(Somatic.Variant = if_else(q.value < 0.1, Somatic.Variant, "NA")) %>%
+		   readr::type_convert()
+
+sig.label = sm.log.results.c 
+
+plot_brca2_er = sig.label %>%
+		ggplot(mapping = aes(x = log2OR, y = -log10(q.value), color = Significant, size = freq)) +
+		geom_point(stat = "identity", alpha = 0.4) +
+		scale_size(range = c(1, 10), name="Frequency (%)") + 
+		scale_color_manual(values = c("Yes" = "blue", "No" = "gray45")) +
+		scale_x_continuous(limits = c(-3.5, 3.5), 
+				   breaks = c(-3, -2, -1, 0, 1, 2, 3)) +
+		scale_y_continuous(limits = c(0, 9), 
+				   breaks = seq(1, 9, 2)) +
+		xlab(expression(log[2]('Odds ratio'))) +
+		ylab('') + 
+		ggtitle(" ") +
+		geom_text_repel(data = sig.label,
+				aes(x = log2(OR), y = -log10(q.value), label = Somatic.Variant),
+				size = 4, nudge_y = 0.5, color = "black") + 
+		geom_vline(xintercept = 0, color = "red") +
+		geom_hline(yintercept = -log10(0.1), linetype = "dashed") +
+		theme_bw() +
+		theme(axis.title.x = element_text(size = 18),
+		      axis.title.y = element_text(size = 18),
+		      axis.text.x = element_text(size = 16),
+		      axis.text.y = element_text(size = 16), 
+		      plot.title = element_text(hjust = 0.5, size = 24),
+		      plot.subtitle = element_text(hjust = 0.5, size = 18),
+		      panel.grid.major = element_blank(),
+		      panel.grid.minor = element_blank())
+
+suppressWarnings(grid.arrange(plot_atm, plot_brca1, plot_brca2, plot_brca2_er, nrow = 2, ncol = 2, widths = c(1, 1)))
+```
+
+<br/>

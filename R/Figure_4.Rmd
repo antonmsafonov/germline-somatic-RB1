@@ -108,7 +108,7 @@ segmented_log2 = segmented_log2 %>%
 
 ```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 5.5, fig.cap = '**Figure 4e:** $Log_2$ Ratio of chromosome 13 from sample 18bs1-Ribo-Mouse-2-Retreatment'}
 plot_ = smoothed_log2 %>%
-	dplyr::filter(Position >= START & Position <= END) %>%
+	dplyr::filter(Position >= start_pos & Position <= end_pos) %>%
 	ggplot(aes(x = Position, y = Log2_Ratio)) +
 	geom_hline(yintercept = 0, color = "goldenrod3", linetype = 3, size = 1) +
 	geom_point(stat = "identity", shape = 21, size = 1, color = "#252525", fill = "#252525", alpha = 1) +
@@ -171,3 +171,5 @@ res = suppressWarnings(plotTracks(c(ideogram_track, alignment_track),
 
 popViewport()
 ```
+
+<br/>
