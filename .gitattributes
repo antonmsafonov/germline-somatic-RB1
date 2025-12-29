@@ -1,5 +1,6 @@
+* text=auto
 *.Rmd linguist-language=R
 *.R linguist-language=R
-*.pynb linguist-language=Python
+*.pynb linguist-language=text
 *.html linguist-detectable=false
 
