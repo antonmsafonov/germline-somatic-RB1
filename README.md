@@ -8,6 +8,7 @@
 
 ![Front page](https://github.com/antonmsafonov/germline-somatic-RB1/blob/repack/etc/splash.png)
 
+#### Required libraries
 ```
 git clone https://github.com/antonmsafonov/germline-somatic-RB1.git
 cd germline-somatic-RB1/R
