@@ -1,4 +1,4 @@
-# Allelic imbalance and HR deficiency drive therapy resistance in breast cancer 
+# Hemizygosity and HR deficiency drive resistance in breast cancer
 
 ## Safonov *et al.*
 ### https://someurl
