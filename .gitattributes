@@ -1,6 +1,2 @@
 * linguist-vendored
-#*.py linguist-vendored=false
-#*.pynb linguist-language=Python
 *.R linguist-vendored=false
-#*.Rmd linguist-language=R
-*.html linguist-detectable=false
