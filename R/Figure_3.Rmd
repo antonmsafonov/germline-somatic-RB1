@@ -1,43 +1,86 @@
 ---
-title: "Figure 3 panels"
-authors:
-  - Anton Safonov
-  - Luca Boscolo Bielo
-  - David Brown
-output: html_document
+title: "Germline-somatic interaction - Figure 3"
+author:
+  - name: Anton Safonov
+  - name: Luca Boscolo Bielo
+  - name: David N Brown
+output:
+  html_document:
+    theme: cerulean
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
-```{r load_packages_functions, include=FALSE}
-library(dplyr)
-library(readr)
-library(magrittr)
-library(tidyr)
-library(knitr)
-library(tidyverse)
-library(jsonlite)
-library(exact2x2)
-library(ggplot2)
-library(gplots)
-library(logistf)
-library(data.table)
-library(ggrepel)
-library(gridExtra)
-library(ComplexHeatmap)
-library(RColorBrewer)
-library(lubridate)
-library(survival)
-library(survminer)
-xfun::pkg_load2(c("htmltools", "mime"))
-`%notin%` = function(x,y) !(x %in% y)
-colMax <- function(data) sapply(data, max, na.rm = TRUE)
-numextract <- function(string){
-str_extract(string, "\\-*\\d+\\.*\\d*")}
+```{r, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+library('BSgenome.Hsapiens.UCSC.hg19')
+library('ComplexHeatmap')
+library('copynumber')
+library('data.table')
+library('doMC')
+library('dplyr')
+library('exact2x2')
+library('foreach')
+library('fuzzyjoin')
+library('gdata')
+library('GenomicRanges')
+library('ggforce')
+library('ggnomics')
+library('ggplot2')
+library('gplots')
+library('ggrepel')
+library('ggsignif')
+library('gridExtra')
+library('Gviz')
+library('htmltools')
+library('jsonlite')
+library('knitr')
+library('logistf')
+library('lubridate')
+library('maftools')
+library('magrittr')
+library('mime')
+library('pander')
+library('parallel')
+library('RColorBrewer')
+library('readr')
+library('reshape2')
+library('superheat')
+library('survival')
+library('survminer')
+library('tidyr')
+library('tidyverse')
+library('viridis')
 
+registerDoMC(8)
+
+'%notin%' <- function(x,y) {
+	!(x %in% y)
+}
+
+'colMax' <- function(data) {
+	sapply(data, max, na.rm = TRUE)
+}
+
+'numextract' <- function(string) {
+	str_extract(string, "\\-*\\d+\\.*\\d*")
+}
+
+'tabf' <- function(x, y, i) {
+	z = c(colnames(x)[i+4], 
+	      exp(y$coefficients[[2]]),
+	      exp(y$ci.lower[[2]]),
+	      exp(y$ci.upper[[2]]),
+	      y$prob[[2]],
+	      sum(x[, i+4])/dim(x)[1]*100,
+	      sum(x[x$GL == 1,i+4])/dim(x[x$GL == 1, ])[1]*100,
+	      sum(x[x$GL == 1,i+4]),
+	      exp(logistf(GL ~ x[,i+4], data=x)$coefficients[[2]]),
+	      logistf(GL ~ x[,i+4], data=x)$prob[[2]])
+	return(invisible(z))
+}
 ```
 
 ```{r figure_3a, include=FALSE, echo = FALSE}
-coloh <- read.csv("../data/Supp_Fig3a_RB1_B2_LOH_ANON.csv")
+coloh <- read.csv("../data/Supp_Fig3a_RB1_B2_LOH_ANON.csv.gz")
 
 coloh <- coloh %>% rename(sample = Patient.ID)
 rb1_lcn1 <- coloh %>% filter(BRCA2 == "gBRCA2_PV") %>% select(-BRCA2)
@@ -146,7 +189,7 @@ fisher.exact(table(coloh.compare$GL, coloh.compare$coloh))
 ```
 
 ```{r fig_3bci, include=FALSE}
-clin_t <- read.csv("../data/Supp_Fig3bc_PFS_firstline_ANON.csv")
+clin_t <- read.csv("../data/Supp_Fig3bc_PFS_firstline_ANON.csv.gz")
 cdk1 <- clin_t
 colnames(cdk1) <- c("Sample.ID", "Patient.ID", "RB1.tcn", "RB1.lcn", "RB1.LOH", "rb1_ascn", "ET.partner", "Treatment.Regimen", "Reason.Stop", "Tx.Line", "PFS.event", "PFS.time.months", "fga", "wgd_bin", "os.event", "time1", "time2", "age.at.dx")
 
@@ -210,7 +253,7 @@ ascn_outcomes_for_forest <- ascn_outcomes_for_forest %>% mutate(ascn = substr(te
 ```
 
 ```{r fig 3g, include = FALSE}
-all.pw2.plus <- read.csv("../data/Supp_Fig3g_ascn_pre_post_ANON.csv")
+all.pw2.plus <- read.csv("../data/Supp_Fig3g_ascn_pre_post_ANON.csv.gz")
 all.pw2.plus <- all.pw2.plus %>% select(-X) %>% rename(Sample = Anonymized.ID)
 
 {get_type_fun = function(x) strsplit(x, ";")[[1]]
@@ -320,7 +363,7 @@ draw(op_pre_post, heatmap_legend_side = "bottom", annotation_legend_side = "bott
 ```
 
 ```{r figure_3k, include = FALSE, echo = FALSE}
-rb1.con.hr <- read.csv("../data/Supp_Fig3k_RB1_cons_final_ANON.csv")
+rb1.con.hr <- read.csv("../data/Supp_Fig3k_RB1_cons_final_ANON.csv.gz")
 rb1.con.hr <- rb1.con.hr %>% select(-X.1, -X)
 
 colnames(rb1.con.hr) <- c("Patient.ID", "Alteration", "B2")
@@ -370,7 +413,7 @@ pie_b2 <- pie(con_freq_b2$prop, col = my_cols_b2, labels = con_freq_b2$Alteratio
 ```
 
 ```{r figure_3l, include = FALSE, echo = FALSE}
-cdk_b2_all <- read.csv("../data/Supp_Fig2ab_CDK46_PFS_ANON.csv")
+cdk_b2_all <- read.csv("../data/Supp_Fig2ab_CDK46_PFS_ANON.csv.gz")
 cdk_b2_all <- cdk_b2_all %>% select(-X)
 colnames(cdk_b2_all) <- c("Patient.ID", "Tx.Line", "time.months", "event", "ET_partner", "B2", "cohort", "RB1_LOH")
 
@@ -393,7 +436,7 @@ xlim = c(0,72))
 ```
 
 ```{r figure_3m, include = FALSE, echo = FALSE}
-tsg.g <- read.csv("../data/Supp_Fig3m_TSG_gain_pre_post_ANON.csv")
+tsg.g <- read.csv("../data/Supp_Fig3m_TSG_gain_pre_post_ANON.csv.gz")
 tsg.g <- tsg.g %>% select(-X) 
 
 tbl_counts <- tsg.g %>%

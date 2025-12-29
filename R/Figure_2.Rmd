@@ -1,62 +1,86 @@
 ---
-title: "Germline-Somatic Interaction from Anonymized Data - Figure 2"
-authors:
-  - Anton Safonov
-  - Luca Boscolo Bielo
-  - David Brown
-output: html_document
+title: "Germline-somatic interaction - Figure 2"
+author:
+  - name: Anton Safonov
+  - name: Luca Boscolo Bielo
+  - name: David N Brown
+output:
+  html_document:
+    theme: cerulean
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
-```{r load_packages_functions, include=FALSE}
+```{r, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+library('BSgenome.Hsapiens.UCSC.hg19')
+library('ComplexHeatmap')
+library('copynumber')
+library('data.table')
+library('doMC')
 library('dplyr')
-library('readr')
-library('magrittr')
-library('tidyr')
-library('knitr')
-library('tidyverse')
-library('jsonlite')
 library('exact2x2')
+library('foreach')
+library('fuzzyjoin')
+library('gdata')
+library('GenomicRanges')
+library('ggforce')
+library('ggnomics')
 library('ggplot2')
 library('gplots')
-library('logistf')
-library('data.table')
 library('ggrepel')
+library('ggsignif')
 library('gridExtra')
-library('ComplexHeatmap')
-library('RColorBrewer')
+library('Gviz')
+library('htmltools')
+library('jsonlite')
+library('knitr')
+library('logistf')
 library('lubridate')
+library('maftools')
+library('magrittr')
+library('mime')
+library('pander')
+library('parallel')
+library('RColorBrewer')
+library('readr')
+library('reshape2')
+library('superheat')
 library('survival')
 library('survminer')
-library('htmltools')
-library('mime')
-library("foreach")
-library("parallel")
-library("doMC")
-
-'%notin%' <- function(x,y) { !(x %in% y) }
-'colMax' <- function(data) { sapply(data, max, na.rm = TRUE) }
-'numextract' <- function(string) { str_extract(string, "\\-*\\d+\\.*\\d*") }
-'returnlog' <- function(x, y, i) {
-	res = c(colnames(x)[i+4], 
-		exp(y$coefficients[[2]]),
-		exp(y$ci.lower[[2]]),
-		exp(y$ci.upper[[2]]),
-		y$prob[[2]],
-		sum(x[, i+4])/dim(x)[1]*100,
-		sum(x[x$GL == 1,i+4])/dim(x[x$GL == 1, ])[1]*100,
-		sum(x[x$GL == 1,i+4]),
-		exp(logistf(GL ~ x[,i+4], data=x)$coefficients[[2]]),
-		logistf(GL ~ x[,i+4], data=x)$prob[[2]])
-	return(invisible(res))
-}
+library('tidyr')
+library('tidyverse')
+library('viridis')
 
 registerDoMC(8)
 
+'%notin%' <- function(x,y) {
+	!(x %in% y)
+}
+
+'colMax' <- function(data) {
+	sapply(data, max, na.rm = TRUE)
+}
+
+'numextract' <- function(string) {
+	str_extract(string, "\\-*\\d+\\.*\\d*")
+}
+
+'tabf' <- function(x, y, i) {
+	z = c(colnames(x)[i+4], 
+	      exp(y$coefficients[[2]]),
+	      exp(y$ci.lower[[2]]),
+	      exp(y$ci.upper[[2]]),
+	      y$prob[[2]],
+	      sum(x[, i+4])/dim(x)[1]*100,
+	      sum(x[x$GL == 1,i+4])/dim(x[x$GL == 1, ])[1]*100,
+	      sum(x[x$GL == 1,i+4]),
+	      exp(logistf(GL ~ x[,i+4], data=x)$coefficients[[2]]),
+	      logistf(GL ~ x[,i+4], data=x)$prob[[2]])
+	return(invisible(z))
+}
 ```
 
 ```{r figure_2ab, include=FALSE, echo = FALSE}
-cdk_b2_all = readr::read_csv(file = "../data/Supp_Fig2ab_CDK46_PFS_ANON.csv", col_names = TRUE, col_types = cols(.default = col_character())) %>%
+cdk_b2_all = readr::read_csv(file = "../data/Supp_Fig2ab_CDK46_PFS_ANON.csv.gz", col_names = TRUE, col_types = cols(.default = col_character())) %>%
 	     readr::type_convert() %>%
 	     dplyr::select(-X1) %>%
 	     dplyr::distinct() %>%
