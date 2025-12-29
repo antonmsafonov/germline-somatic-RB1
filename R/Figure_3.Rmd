@@ -1,9 +1,7 @@
 ---
-title: "Germline-somatic interaction - Figure 3"
+title: "Germline-somatic interaction - Figure 2"
 author:
-  - name: Anton Safonov
-  - name: Luca Boscolo Bielo
-  - name: David N Brown
+  - name: Anton Safonov, Luca Boscolo Bielo, David N Brown
 output:
   html_document:
     theme: cerulean

@@ -1,9 +1,7 @@
 ---
-title: "Germline-somatic interaction - Figure 1"
+title: "Germline-somatic interaction - Figure 2"
 author:
-  - name: Anton Safonov
-  - name: Luca Boscolo Bielo
-  - name: David N Brown
+  - name: Anton Safonov, Luca Boscolo Bielo, David N Brown
 output:
   html_document:
     theme: cerulean
@@ -1589,7 +1587,7 @@ lr.results.palb2.uni = sm.log.results.c
 
 <!-- Figure 1b-d -->
 
-```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 8, fig.width = 8, fig.cap = '<br/>**Figure 1:** Volcano plots of enrichment analysis of gATM (top-left). (top-right) Similar to gATM, but depicting comparison of gBRCA1. (bottom-left) Similar to gATM, but depicting comparison of gBRCA2. (bottom-right) Similar to gBRCA2 using a subset of HR+/HER2- tumors'}
+```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 8, fig.width = 8, fig.cap = '<br/>**Figure 1b-d:** Volcano plots of enrichment analysis of gATM (top-left). Similar to gATM, but depicting comparison of gBRCA1 (top-right). Similar to gATM, but depicting comparison of gBRCA2 (bottom-left). Similar to gBRCA2 using a subset of HR+/HER2- tumors (bottom-right)'}
 
 ### ATM
 sm.log.results.c = lr.results.atm %>%
