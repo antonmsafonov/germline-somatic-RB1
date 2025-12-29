@@ -8,6 +8,21 @@
 
 ![Front page](https://github.com/antonmsafonov/germline-somatic-RB1/blob/repack/etc/splash.png)
 
+#### Istallation
+```
+git clone https://github.com/antonmsafonov/germline-somatic-RB1.git
+cd germline-somatic-RB1/R
+```
+
+#### Execution in R
+```
+library("rmarkdown")
+rmarkdown::render(input = "Figure_1.Rmd", output_dir = "../res/")
+rmarkdown::render(input = "Figure_2.Rmd", output_dir = "../res/")
+rmarkdown::render(input = "Figure_3.Rmd", output_dir = "../res/")
+rmarkdown::render(input = "Figure_4.Rmd", output_dir = "../res/")
+```
+
 #### Required R libraries
 ```
 > sessionInfo()
@@ -125,19 +140,3 @@ loaded via a namespace (and not attached):
 [133] memoise_2.0.1
 ```
 
-
-
-#### Istallation
-```
-git clone https://github.com/antonmsafonov/germline-somatic-RB1.git
-cd germline-somatic-RB1/R
-```
-
-#### Execution in R
-```
-library("rmarkdown")
-rmarkdown::render(input = "Figure_1.Rmd", output_dir = "../res/")
-rmarkdown::render(input = "Figure_2.Rmd", output_dir = "../res/")
-rmarkdown::render(input = "Figure_3.Rmd", output_dir = "../res/")
-rmarkdown::render(input = "Figure_4.Rmd", output_dir = "../res/")
-```
