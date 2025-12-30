@@ -20,7 +20,7 @@ library("rmarkdown")
 rmarkdown::render(input = "Figure_1_Oncoprint.Rmd", output_dir = "../res/")
 rmarkdown::render(input = "Figure_1_Volcano.Rmd", output_dir = "../res/")
 rmarkdown::render(input = "Figure_2_Survival.Rmd", output_dir = "../res/")
-rmarkdown::render(input = "Figure_3.Rmd", output_dir = "../res/")
+rmarkdown::render(input = "Figure_3_Survial_and_Oncoprint.Rmd", output_dir = "../res/")
 rmarkdown::render(input = "Figure_4_Alignment.Rmd", output_dir = "../res/")
 ```
 
