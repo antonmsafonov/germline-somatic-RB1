@@ -1,6 +1,8 @@
-* linguist-vendored
-*.R linguist-vendored=R
-*.Rmd linguist-vendored=R
-*.py linguist-vendored=Python
-*.pynb linguist-vebdored=Python
-*.html linguist-detectable=false
+* text=auto
+*.Rmd text eol=lf
+*.rmd text eol=lf
+
+*.Rmd diff merge
+*.rmd diff merge
+
+*.[Rr]md linguist-detectable
