@@ -1,0 +1,173 @@
+---
+title: "Germline-somatic interaction - Figure 4"
+author:
+  - name: Anton Safonov, Luca Boscolo Bielo, David N Brown
+output:
+  html_document:
+    theme: cerulean
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+```{r, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+library('BSgenome.Hsapiens.UCSC.hg19')
+library('ComplexHeatmap')
+library('copynumber')
+library('data.table')
+library('doMC')
+library('dplyr')
+library('exact2x2')
+library('foreach')
+library('fuzzyjoin')
+library('gdata')
+library('GenomicRanges')
+library('ggforce')
+library('ggnomics')
+library('ggplot2')
+library('gplots')
+library('ggrepel')
+library('ggsignif')
+library('gridExtra')
+library('Gviz')
+library('htmltools')
+library('jsonlite')
+library('knitr')
+library('logistf')
+library('lubridate')
+library('maftools')
+library('magrittr')
+library('mime')
+library('pander')
+library('parallel')
+library('RColorBrewer')
+library('readr')
+library('reshape2')
+library('superheat')
+library('survival')
+library('survminer')
+library('tidyr')
+library('tidyverse')
+library('viridis')
+
+setup_ideograms(genome = "hg19")
+options(ucscChromosomeNames = FALSE)
+registerDoMC(8)
+
+'scientific_10' <- function(x) {
+	parse(text=gsub("+", "", gsub("e", " %.% 10^", scales::scientific_format()(x)), , fixed = TRUE))
+}
+
+'scale_range' <- function(x, center = TRUE, scale = TRUE) {
+	x = as.vector(scale(x, center = center, scale = scale))
+	return(invisible(x))
+}
+
+'str_split' <- function(x, split, fixed, n) {
+	y = unlist(strsplit(x, split = split, fixed = fixed))[n]
+	return(invisible(y))
+}
+```
+
+```{r, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+start_pos = 21230103
+end_pos = 84220257
+
+smoothed_log2 = readr::read_csv(file = "../data/Supp_Fig4a_Log2_Ratio.csv.gz", col_names = TRUE, col_types = cols(.default = col_character())) %>%
+		readr::type_convert() %>%
+		data.frame() %>%
+		copynumber::winsorize(method = "mad", , tau = 1.5, k = 25, verbose = FALSE) %>%
+		dplyr::rename_all(function(x) {c("Chromosome", "Position", "Log2_Ratio")}) 
+	
+segmented_log2 = smoothed_log2 %>%
+		 dplyr::filter(Position >= start_pos & Position <= end_pos) %>%
+		 copynumber::pcf(gamma = 5, normalize = FALSE, fast = TRUE, verbose = FALSE) %>%
+	 	 dplyr::select(-arm, -n.probes) %>%
+		 dplyr::rename(Chromosome = chrom, Start_Position = start.pos, End_Position = end.pos) %>%
+		 dplyr::mutate(Chromosome = case_when(
+			 		Chromosome == 23 ~ "X",
+			 		TRUE ~ as.character(Chromosome)
+		 )) %>%
+		 dplyr::mutate(Chromosome = factor(Chromosome, levels = c(1:22, "X"), ordered = TRUE)) %>%
+		 dplyr::rename(sample_name = sampleID, Log2_Ratio = mean) %>%
+		 dplyr::mutate(absolute_copies = round(((2^Log2_Ratio)*((1*2)+(2-2*1)) - 2 + 2*1)/1))
+	
+segmented_log2 = segmented_log2 %>%
+		 dplyr::select(-Log2_Ratio) %>%
+		 dplyr::left_join(segmented_log2 %>%
+				  dplyr::group_by(absolute_copies) %>%
+				  dplyr::summarize(Log2_Ratio = mean(Log2_Ratio)),
+				  by = "absolute_copies") %>%
+		 dplyr::mutate(Log2_Ratio = case_when(
+			 	Log2_Ratio < (-.5) & Log2_Ratio > (-1) ~ -1,
+			 	TRUE ~ Log2_Ratio
+		 ))
+```
+
+<br/>
+
+```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 5.5, fig.cap = '**Figure 4e:** $Log_2$ Ratio of chromosome 13 from sample 18bs1-Ribo-Mouse-2-Retreatment'}
+plot_ = smoothed_log2 %>%
+	dplyr::filter(Position >= start_pos & Position <= end_pos) %>%
+	ggplot(aes(x = Position, y = Log2_Ratio)) +
+	geom_hline(yintercept = 0, color = "goldenrod3", linetype = 3, size = 1) +
+	geom_point(stat = "identity", shape = 21, size = 1, color = "#252525", fill = "#252525", alpha = 1) +
+	geom_segment(data = segmented_log2 %>%
+		     	    dplyr::arrange(desc(sample_name)) %>%
+		     	    dplyr::mutate(sample_name = factor(sample_name, levels = unique(sample_name), ordered = TRUE)),
+		     mapping = aes(x = Start_Position, y = Log2_Ratio, xend = End_Position, yend = Log2_Ratio),
+		     		   color = "salmon", inherit.aes = FALSE, size = 1.5, lineend = "round") +
+	geom_point(data = dplyr::tibble(x = mean(c(32889645, 32974405)), y = -3.5),
+		   mapping = aes(x = x , y = y),
+		   shape = 25, color = "#377eb8", fill = "#377eb8", size = 2.5) +
+	geom_point(data = dplyr::tibble(x = mean(c(48877887, 49056026)), y = -3.5),
+		   mapping = aes(x = x , y = y),
+		   shape = 25, color = "#4daf4a", fill = "#4daf4a", size = 2.5) +
+	geom_text(data = dplyr::tibble(x = mean(c(32889645, 32974405)), y = -3.25, label = "BRCA2"),
+		  mapping = aes(x = x , y = y, label = label),
+		  color = "#377eb8", size = 2.5, fontface = "italic") +
+	geom_text(data = dplyr::tibble(x = mean(c(48877887, 49056026)), y = -3.25, label = "RB1"),
+		  mapping = aes(x = x , y = y, label = label),
+		  color = "#4daf4a", size = 2.5, fontface = "italic") +
+	xlab("\n\nCoordinate\n") +
+	ylab(expression(Log[2]~"Ratio")) +
+	scale_x_continuous(labels = scientific_10) +
+	scale_y_continuous(breaks = c(-3, -2, -1, 0, 1, 2),
+			   limits = c(-3.5, 2)) +
+	theme(axis.text = element_text(size = 10),
+	      axis.title.x = element_text(size = 12),
+	      axis.title.y = element_text(size = 12, margin = margin(r = 20))) +
+	theme_minimal() +
+	guides(x = guide_ideogram_axis(title = "\nChromosome 13 (bp)\n\n", position = "bottom", chromosome = "chr13",
+				       genome = "hg19", ideo_size = unit(.5, "cm"), funnel_size = unit(.1, "cm"),
+				       funnel_col = "grey90"),
+	       color = FALSE, shape = FALSE, size = FALSE, fill = FALSE, alpha = FALSE)
+	
+suppressWarnings(grid.arrange(plot_))
+```
+
+<br/>
+
+```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 6, fig.cap = '<br/>**Figure 4e:** Sequence alignment at exons 4--18 of RB1 from sample 18bs1-Ribo-Mouse-2-Retreatment'}
+ideogram_track = IdeogramTrack(genome = "hg19", chromosome = "chr13", background.title = "white", fontcolor.title = "grey35")
+alignment_track = AlignmentsTrack("../data/18bs1-Ribo-Mouse-2-Retreatment_chrN.bam", isPaired = TRUE, name = " ",
+				  background.title = "white", fontcolor.title = "grey35", col.axis = "grey50", stacking = "squish")
+
+grid.newpage()
+pushViewport(viewport(layout = grid.layout(nrow = 1, ncol = 2)))
+
+pushViewport(viewport(layout.pos.col = 1))
+start_bp = 48919100
+end_bp = 48920200
+res = suppressWarnings(plotTracks(c(ideogram_track, alignment_track),
+				  chromosome = "chr13", main = "18bs1-Ribo-Mouse-2-Retreatment - RB1 exon 4", cex.main = .6, from = start_bp, to = end_bp, ylim = c(0,201), sizes = c(.25, 5.45), add = TRUE))
+popViewport()
+
+pushViewport(viewport(layout.pos.col = 2))
+start_bp = 49015000
+end_bp = 49016100
+res = suppressWarnings(plotTracks(c(ideogram_track, alignment_track),
+				  chromosome = "chr13", main = "18bs1-Ribo-Mouse-2-Retreatment - RB1 exon 18", cex.main = .6, from = start_bp, to = end_bp, ylim = c(0,201), sizes = c(.25, 5.45), add = TRUE))
+
+popViewport()
+```
+
+<br/>

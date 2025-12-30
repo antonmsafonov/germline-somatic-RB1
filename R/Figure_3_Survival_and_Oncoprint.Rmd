@@ -1,0 +1,584 @@
+---
+title: "Germline-somatic interaction - Figure 3"
+author:
+  - name: Anton Safonov, Luca Boscolo Bielo, David N Brown
+output:
+  html_document:
+    theme: cerulean
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+```{r, eval = TRUE, echo = FALSE, results = 'hide', include = FALSE}
+library('BSgenome.Hsapiens.UCSC.hg19')
+library('ComplexHeatmap')
+library('copynumber')
+library('data.table')
+library('doMC')
+library('dplyr')
+library('exact2x2')
+library('foreach')
+library('fuzzyjoin')
+library('gdata')
+library('GenomicRanges')
+library('ggforce')
+library('ggnomics')
+library('ggplot2')
+library('gplots')
+library('ggrepel')
+library('ggsignif')
+library('gridExtra')
+library('Gviz')
+library('htmltools')
+library('jsonlite')
+library('knitr')
+library('logistf')
+library('lubridate')
+library('maftools')
+library('magrittr')
+library('mime')
+library('pander')
+library('parallel')
+library('RColorBrewer')
+library('readr')
+library('reshape2')
+library('superheat')
+library('survival')
+library('survminer')
+library('tidyr')
+library('tidyverse')
+library('viridis')
+
+registerDoMC(8)
+
+'%notin%' <- function(x,y) {
+	!(x %in% y)
+}
+
+'colMax' <- function(data) {
+	sapply(data, max, na.rm = TRUE)
+}
+
+'numextract' <- function(string) {
+	str_extract(string, "\\-*\\d+\\.*\\d*")
+}
+
+'tabf' <- function(x, y, i) {
+	z = c(colnames(x)[i+4], 
+	      exp(y$coefficients[[2]]),
+	      exp(y$ci.lower[[2]]),
+	      exp(y$ci.upper[[2]]),
+	      y$prob[[2]],
+	      sum(x[, i+4])/dim(x)[1]*100,
+	      sum(x[x$GL == 1,i+4])/dim(x[x$GL == 1, ])[1]*100,
+	      sum(x[x$GL == 1,i+4]),
+	      exp(logistf(GL ~ x[,i+4], data=x)$coefficients[[2]]),
+	      logistf(GL ~ x[,i+4], data=x)$prob[[2]])
+	return(invisible(z))
+}
+```
+<br/>
+
+```{r figure_3a, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 3, fig.width = 5, fig.cap = '**Figure 3a:**'}
+coloh = suppressWarnings(readr::read_csv(file = "../data/Supp_Fig3a_RB1_B2_LOH_ANON.csv.gz", col_names = TRUE, col_types = cols(.default = col_character()))) %>%
+	readr::type_convert() %>%
+	dplyr::rename(sample = Patient.ID)
+
+rb1_lcn1 = coloh %>%
+	   dplyr::filter(BRCA2 == "gBRCA2_PV") %>%
+	   dplyr::select(-BRCA2)
+rb1_lcn2 = coloh %>%
+	   dplyr::filter(BRCA2 == "gWT") %>%
+	   dplyr::select(-BRCA2)
+
+n1 = length(unique(rb1_lcn1$sample))
+
+band_median = rb1_lcn1 %>% 
+	      dplyr::group_by(band) %>% 
+	      mutate(band_median = median(start, end, na.rm = TRUE)) %>% #??
+	      dplyr::select(c(band, band_median)) %>%
+	      dplyr::distinct(band, band_median, .keep_all = TRUE)
+
+rb1_lcn1 = rb1_lcn1 %>% 
+	   dplyr::filter(lcn != "NA") %>%
+	   dplyr::filter(lcn != "NF") %>%
+	   dplyr::mutate(LCN = case_when(
+		   		lcn == 0 ~ "LOH",
+		   		TRUE ~ "No LOH"
+	   )) %>%
+	   dplyr::select(c(sample, band, LCN)) %>%
+	   dplyr::distinct(sample, band, .keep_all = TRUE) %>%
+	   dplyr::group_by(band) %>%
+	   dplyr::mutate(n.group = length(band))
+
+d1 = rb1_lcn1 %>%
+     dplyr::group_by(band, LCN) %>%
+     dplyr::summarise(n1 = length(LCN), gBRCA2 = sum(LCN=="LOH")/n.group[1]*100)
+
+n2 = length(unique(rb1_lcn2$sample))
+
+rb1_lcn2 = rb1_lcn2 %>% 
+	   dplyr::filter(lcn != "NA") %>%
+	   dplyr::filter(lcn != "NF") %>%
+	   dplyr::mutate(LCN = case_when(
+		   		lcn == 0 ~ "LOH",
+		   		TRUE ~ "No LOH"
+	   )) %>%
+	   dplyr::select(c(sample, band, LCN)) %>%
+	   dplyr::distinct(sample, band, .keep_all = TRUE) %>%
+	   dplyr::group_by(band) %>%
+	   dplyr::mutate(n.group=length(band))
+
+d2 = rb1_lcn2 %>%
+     dplyr::group_by(band, LCN) %>%
+     dplyr::summarise(n2 = length(LCN), gWT = -(sum(LCN=="LOH")/n.group[1]*100))
+
+d = merge(d1, d2, by = c("band", "LCN"))
+
+df = d %>%
+     reshape2::melt(id.vars = c("band", "LCN"), measure.vars = c("gBRCA2", "gWT")) %>%
+     merge(band_median, by = c("band"), all.x = T)
+
+df_subset = df %>%
+	    dplyr::filter(band_median %in% (30863093:78197507)) %>%
+	    dplyr::mutate(band_median = factor(band_median)) %>%
+	    dplyr::mutate(highlight = ifelse(band_median %in% c(34656566, 46528600), as.character(variable), "Other"))
+
+plot_ = df_subset %>%
+	dplyr::filter(LCN == "LOH") %>%
+	ggplot(mapping = aes(x = band_median, y = value, fill = highlight, colour = highlight)) +
+	geom_col(width = 1, position = "identity") +
+	scale_y_continuous(limits = c(-40, 100),
+			   breaks = seq(-40, 100, by = 20)) +
+	scale_fill_manual(values = c("gWT" = "#02b26e",       
+				     "gBRCA2" = "#eb5299",
+				     "Other" = "grey80")) +
+	scale_colour_manual(values = c("gWT" = "#02b26e",
+				       "gBRCA2" = "#eb5299",
+				       "Other" = "grey80")) +
+	ylab("Proportion of LOH (%)") +
+	theme_classic() + 
+	theme(axis.text.x = element_blank(),
+	      axis.ticks.x = element_blank(), 
+	      axis.title.x = element_blank(),
+	      axis.line.x = element_blank(), 
+	      axis.text.y = element_text(size = 15, colour = "black"),
+	      text = element_text(size = 14, colour = "black"),
+	      plot.title = element_text(size = 14, colour = "black"),
+	      legend.text = element_text(size = 14, colour = "black"),
+	      legend.title = element_blank()) 
+
+suppressWarnings(grid.arrange(plot_))
+```
+
+<br/>
+
+```{r summary, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE}
+coloh = coloh %>%
+	dplyr::filter(hgnc %in% c("RB1", "BRCA2")) %>%
+	dplyr::mutate(loh = case_when(
+				lcn == "0" ~ "1",
+				is.na(lcn) ~ "NA",
+				lcn == "NF" ~ "NA",
+				TRUE ~ "0"
+	))
+
+coloh.na = coloh %>%
+	   dplyr::filter(loh == "NA") %>%
+	   dplyr::pull(sample)
+
+coloh.e = coloh %>%
+	  dplyr::filter(sample %notin% coloh.na)
+
+coloh.b2 = coloh.e %>%
+	   dplyr::filter(BRCA2 == "gBRCA2_PV") %>%
+	   dplyr::select(sample, hgnc, loh) %>%
+	   dplyr::distinct() %>%
+	   tidyr::pivot_wider(names_from = hgnc, values_from = loh) %>%
+	   dplyr::mutate(BRCA2 = as.numeric(BRCA2)) %>%
+	   dplyr::mutate(RB1 = as.numeric(RB1)) %>%
+	   dplyr::mutate(coloh = BRCA2 + RB1) %>%
+	   dplyr::mutate(coloh = case_when(
+		   			coloh == 2 ~ 1,
+		   			TRUE ~ 0
+	   )) %>%
+	   dplyr::mutate(GL = "B2")
+
+coloh.wt = coloh.e %>%
+	   dplyr::filter(BRCA2 == "gWT") %>%
+	   dplyr::select(sample, hgnc, loh) %>%
+	   dplyr::distinct() %>%
+	   tidyr::pivot_wider(names_from = hgnc, values_from = loh) %>%
+	   dplyr::mutate(BRCA2 = as.numeric(BRCA2)) %>%
+	   dplyr::mutate(RB1 = as.numeric(RB1)) %>%
+	   dplyr::mutate(coloh = BRCA2 + RB1) %>%
+	   dplyr::mutate(coloh = case_when(
+		   			coloh == 2 ~ 1,
+		   			TRUE ~ 0
+	   )) %>%
+	   dplyr::mutate(GL = "WT")
+
+coloh.compare = rbind(coloh.b2, coloh.wt)
+fisher.exact(table(coloh.compare$GL, coloh.compare$coloh))
+```
+
+<br/>
+
+```{r figure_3b, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 5.5, fig.cap = '**Figure 3b:**'}
+clin_t = suppressWarnings(readr::read_csv(file = "../data/Supp_Fig3bc_PFS_firstline_ANON.csv.gz", col_names = TRUE, col_types = cols(.default = col_character()))) %>%
+	 readr::type_convert()
+
+cdk1 = clin_t %>%
+       dplyr::rename_all(function(x) { c("Sample.ID", "Patient.ID", "RB1.tcn", "RB1.lcn", "RB1.LOH", "rb1_ascn", "ET.partner", "Treatment.Regimen", "Reason.Stop", "Tx.Line", "PFS.event", "PFS.time.months", "fga", "wgd_bin", "os.event", "time1", "time2", "age.at.dx") })
+
+my_cols = c("No_LOH" = "#3db54a", "LOH" = "#e95298")
+
+cdk_loh.plot = survfit(Surv(PFS.time.months, PFS.event) ~ RB1.LOH, data = cdk1) %>%
+	       ggsurvplot(risk.table = TRUE,
+			  tables.height = 0.20,
+			  tables.theme = theme_cleantable(),
+			  censor = TRUE,
+			  break.time.by = 12,
+			  fontsize = 3,
+			  axes.offset = FALSE,
+			  xlab = "Follow up time (mo)",
+			  xlim = c(0,60))
+
+print(cdk_loh.plot)
+
+cdk1 = cdk1 %>%
+       dplyr::mutate(RB1.LOH = factor(RB1.LOH, levels = c("No_LOH", "LOH")))
+
+cdk1 %>%
+suppressWarnings(coxph(Surv(PFS.time.months, PFS.event) ~ RB1.LOH + ET.partner)) %>%
+summary()
+```
+<br/>
+
+```{r figure_3c, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 5.5, fig.cap = '**Figure 3c:**'}
+os.km.plot = suppressWarnings(survfit(Surv(time1, time2, os.event) ~ RB1.LOH, data = cdk1)) %>%
+	     ggsurvplot(risk.table= TRUE,
+			tables.height = 0.20,
+			tables.theme = theme_cleantable(),
+			censor = TRUE,
+			break.time.by = 12,
+			fontsize = 3,
+			axes.offset = FALSE,
+			xlab = "Follow up time (mo)",
+			xlim = c(0,84))
+
+print(os.km.plot)
+
+cdk1 %>%
+suppressWarnings(coxph(Surv(time1, time2, os.event) ~ ET.partner + RB1.LOH)) %>%
+summary()
+```
+
+<br/>
+
+```{r eval = TRUE, echo = FALSE, message = FALSE, include = TRUE}
+cdk1 = cdk1 %>%
+       dplyr::mutate(rb1_ascn = factor(rb1_ascn, levels = c("Heterozygous", "Other_LOH", "Het_loss")))
+
+#OS - unadjusted by FGA, WGD
+os.un = suppressWarnings(coxph(Surv(time1, time2, os.event) ~ rb1_ascn + ET.partner, data = cdk1))
+t.os.un = os.un %>%
+	  broom::tidy(exponentiate = TRUE, conf.int = TRUE) %>%
+	  dplyr::filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>%
+	  dplyr::select(term, estimate, p.value, conf.low, conf.high) %>%
+	  dplyr::mutate(analysis = "OS_univariate")
+
+#OS - adjusted by FGA, WGD
+os.adj = suppressWarnings(coxph(Surv(time1, time2, os.event) ~ rb1_ascn + ET.partner + wgd_bin + fga, data = cdk1))
+t.os.adj = os.adj %>%
+	   broom::tidy(exponentiate = TRUE, conf.int = TRUE) %>%
+	   dplyr::filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>%
+	   dplyr::select(term, estimate, p.value, conf.low, conf.high) %>%
+	   dplyr::mutate(analysis = "OS_multivariate")
+
+#PFS - unadjusted by FGA, WGD
+pfs.un = suppressWarnings(coxph(Surv(PFS.time.months, PFS.event) ~ rb1_ascn + ET.partner, data = cdk1))
+t.pfs.un = pfs.un %>%
+	   broom::tidy(exponentiate = TRUE, conf.int = TRUE) %>%
+	   dplyr::filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>%
+	   dplyr::select(term, estimate, p.value, conf.low, conf.high) %>%
+	   dplyr::mutate(analysis = "PFS_univariate")
+
+#PFS - adjusted by FGA, WGD
+pfs.adj = suppressWarnings(coxph(Surv(PFS.time.months, PFS.event) ~ rb1_ascn + ET.partner+ wgd_bin + fga, data = cdk1))
+t.pfs.adj = pfs.adj %>%
+	    broom::tidy(exponentiate = TRUE, conf.int = TRUE) %>%
+	    dplyr::filter(term %in% c("rb1_ascnOther_LOH", "rb1_ascnHet_loss")) %>%
+	    dplyr::select(term, estimate, p.value, conf.low, conf.high) %>%
+	    dplyr::mutate(analysis = "PFS_multivariate")
+
+ascn_outcomes_for_forest = rbind(t.pfs.un, t.pfs.adj) %>%
+			   rbind(t.os.un) %>%
+			   rbind(t.os.adj) %>%
+			   dplyr::mutate(ascn = substr(term, 9, nchar(term))) %>%
+			   dplyr::select(-term)
+```
+
+```{r figure_3g, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 9, fig.cap = '**Figure 3g:**'}
+all.pw2.plus = suppressWarnings(readr::read_csv(file = "../data/Supp_Fig3g_ascn_pre_post_ANON.csv.gz", col_names = TRUE, col_types = cols(.default = col_character()))) %>%
+	       dplyr::select(-X1) %>%
+	       dplyr::rename(Sample = Anonymized.ID)
+
+{get_type_fun = function(x) strsplit(x, ";")[[1]]
+
+ col_op = c("WT" = "#CCCCCC", "Het_loss" = brewer.pal(4, "BuPu")[3], "Other_LOH" = "magenta", "Heterozygous" = brewer.pal(4, "BuPu")[1],
+	    "Missense_driver" =  "darkgreen", "Splice_driver" = "darkorange1", "Truncating_driver" = "#001540", "Fusion" = "purple", "Amplification" = "red", "Deletion" = "blue")
+
+ alter_fun = list(
+    background = function(x,y,w,h) {grid.rect(x,y,w,h, gp = gpar(fill = "white", col = NA))}, 
+   WT = function(x, y, w, h) {
+    grid.rect(x, y, w*0.9, h*0.9,
+              gp = gpar(fill = col_op["WT"], col = NA))
+   },
+  Het_loss= function(x, y, w, h) {
+    grid.rect(x, y, w*0.9, h*0.9,
+               gp = gpar(fill = col_op["Het_loss"], col = NA))
+   },
+  Other_LOH = function(x, y, w, h) {
+    grid.rect(x, y, w*0.9, h*0.9,
+              gp = gpar(fill = col_op["Other_LOH"], col = NA))
+   },
+  Heterozygous = function(x, y, w, h) {
+    grid.rect(x, y,w*0.9, h*0.9,
+             gp = gpar(fill = col_op["Heterozygous"], col = NA))
+   },
+   Amplification = function(x, y, w, h) {
+    grid.rect(x, y, w*0.9, h*0.9,
+              gp = gpar(fill = col_op["Amplification"], col = NA))
+   },
+    Deletion = function(x, y, w, h) {
+    grid.rect(x, y, w*0.9, h*0.9,
+              gp = gpar(fill = col_op["Deletion"], col = NA))
+   },
+   Missense_driver = function(x, y, w, h) {
+    grid.rect(x, y, w*0.9, h*0.33,
+              gp = gpar(fill = col_op["Missense_driver"], col = NA))
+   },
+   Splice_driver = function(x, y, w, h) {
+    grid.rect(x, y, w*0.9, h*0.33,
+              gp = gpar(fill = col_op["Splice_driver"], col = NA))
+   },
+   Truncating_driver = function(x, y, w, h) {
+    grid.rect(x, y, w*0.9, h*0.33,
+              gp = gpar(fill = col_op["Truncating_driver"], col = NA))
+   },
+   Fusion = function(x, y, w, h) {
+     grid.rect(x, y, w-unit(2, "pt"), h*0.33,
+              gp = gpar(fill = col_op["Fusion"], col = NA))
+  },
+   acquired = function(x, y, w, h) {
+    grid.rect(x, y, w, h,
+              gp = gpar(fill = NA, lwd = 2))
+   },
+   Not_Tested = function(x,y,w,h) {
+     grid.points(x,y,pch = "-")
+   }
+ )
+
+ heatmap_legend_param = list(title = "Variants (Annotated Drivers)",
+			     at = c("WT","Het_loss", "Other_LOH", "Heterozygous", "Missense_driver", "Splice_driver", "Truncating_driver",  "Fusion", "Amplification", "Deletion", "acquired"), 
+                             labels = c("WT","Het Loss", "Other LOH", "Heterozygous", "Missense mutation (putative driver)", "Splice Site mutation (putative driver)", "Truncating mutation (putative driver)","Fusion (putative driver)", "Amplification", "Homozygous deletion", "Acquired on CDK4/6"),
+			     ncol = 3)
+
+ all.pw2.plus = all.pw2.plus %>% 
+ 	        dplyr::mutate(across(Post_RB1:Post_CCNE1, ~factor(.x, levels = c("Not Tested", "WT", "Deletion", "Amplification", "Fusion", "Splice_driver", "Missense_driver", "Truncating_driver", "Amplification;acquired", "Deletion;acquired", "Fusion;acquired", "Splice_driver;acquired", "Missense_driver;acquired", "Truncating_driver;acquired")))) %>%
+ 	        dplyr::mutate(rb1_ascn = factor(rb1_ascn, levels = c("Heterozygous", "Other_LOH", "Het_loss"))) %>%
+ 	        dplyr::arrange(-as.numeric(rb1_ascn),
+			       -as.numeric(Post_RB1), 
+			       -as.numeric(Post_PTEN), 
+			       -as.numeric(Post_AURKA), 
+			       -as.numeric(Post_LATS2), 
+			       -as.numeric(Post_YAP1),
+			       -as.numeric(Post_FAT1), 
+			       -as.numeric(Post_CCNE1))
+
+ awp = all.pw2.plus %>%
+       dplyr::select(Sample, rb1_ascn,
+		     Post_RB1, Post_PTEN,
+		     Post_AURKA, Post_LATS2,
+		     Post_YAP1, Post_FAT1,
+		     Post_CCNE1)
+
+ abt.plus = t(awp)
+ colnames(abt.plus) = abt.plus[1,]
+ abt.plus = abt.plus[-1,]
+ samp.order = colnames(abt.plus)
+
+ ann.op.plus = all.pw2.plus %>%
+ 	       dplyr::pull(rb1_ascn)
+
+ col.ann = list(rb1_ascn = c("Het_loss" = brewer.pal(4, "BuPu")[3], "Other_LOH" = "magenta", "Heterozygous" = brewer.pal(4, "BuPu")[1]))
+
+}
+
+ht_opt$COLUMN_ANNO_PADDING = unit(8, "mm")
+op_pre_post = oncoPrint(as.matrix(abt.plus),
+			alter_fun = alter_fun,
+			top_annotation = NULL,
+			col = col_op,
+			column_order = samp.order,
+			row_names_side = "left",
+			pct_side = "right",
+			row_names_gp = gpar(fontsize = 12), 
+			column_split = all.pw2.plus$rb1_ascn,
+			column_gap = unit(6, "mm"),
+                        #row_split = row_cuts, 
+			row_gap = unit(3, "mm"), 
+			#row_gap = unit(3, "mm"),
+			row_order = row.names(abt.plus),
+			right_annotation = NULL,
+			show_pct = FALSE, 
+			column_title = "Pre-post CDK4/6 samples ", 
+			heatmap_legend_param = heatmap_legend_param,
+			alter_fun_is_vectorized = TRUE)
+
+suppressWarnings(draw(op_pre_post, heatmap_legend_side = "bottom", annotation_legend_side = "bottom"))
+```
+
+<br/>
+
+```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE}
+rb1.con.hr = suppressWarnings(readr::read_csv(file = "../data/Supp_Fig3k_RB1_cons_final_ANON.csv.gz", col_names = TRUE, col_types = cols(.default = col_character()))) %>%
+	     readr::type_convert() %>%
+	     dplyr::select(-X, -X1) %>%
+	     dplyr::rename_all(function(x) { c("Patient.ID", "Alteration", "B2") }) %>%
+	     dplyr::mutate(HRD_cons = case_when(
+		     			Alteration %in% c("Deletion <= 25nt", "Fusion") ~ 1,
+		     			TRUE ~ 0
+	     ))
+
+fisher.exact(table(rb1.con.hr$B2, rb1.con.hr$HRD_cons))
+
+rb1.con.b2 = rb1.con.hr %>%
+	     dplyr::filter(B2 == "gBRCA2")
+
+rb1.con.wt = rb1.con.hr %>%
+	     dplyr::filter(B2 == "WT")
+
+con_freq_b2 = rb1.con.b2 %>%
+	      .$Alteration %>%
+	      table() %>%
+	      as.data.frame() %>%
+	      dplyr::rename_all(function(x) { c ("Alteration", "numb") }) %>%
+	      dplyr::mutate(prop = numb/sum(numb)) %>%
+	      dplyr::mutate(Alteration = as.character(Alteration)) %>%
+	      dplyr::arrange(Alteration) %>%
+	      dplyr::mutate(Alteration = case_when(
+		      			Alteration == "Deletion <= 25nt" ~ "A.Short Deletion",
+		      			Alteration == "Fusion" ~ "B.SV",
+		      			TRUE ~ Alteration
+	      ))
+
+con_freq_wt = rb1.con.wt %>%
+	      .$Alteration %>%
+	      table() %>%
+	      as.data.frame() %>%
+	      dplyr::rename_all(function(x) { c ("Alteration", "numb") }) %>%
+	      dplyr::mutate(prop = numb/sum(numb)) %>%
+	      dplyr::mutate(Alteration = as.character(Alteration)) %>%
+	      dplyr::arrange(Alteration) %>%
+	      dplyr::mutate(Alteration = case_when(
+		      			Alteration == "Deletion <= 25nt" ~ "A.Short Deletion",
+		      			Alteration == "Fusion" ~ "B.SV",
+		      			TRUE ~ Alteration))
+
+my_cols = c("A.Short Deletion" = "#bc6ead",
+	    "B.SV" = "#e4b4d3",
+	    "Deletion > 25 nt" = "#9e6127",
+	    "Homozygous Deletion" = "#5095cd",
+	    "Insertion" = "#fec65d",
+	    "Missense" = "#7fc67c")
+
+my_cols_b2 = c("A.Short Deletion" = "#bc6ead",
+	       "B.SV" = "#e4b4d3",
+	       "Homozygous Deletion" = "#5095cd",
+	       "Missense" = "#7fc67c")
+```
+
+```{r figure_3k, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 4, fig.width = 4, fig.cap = '**Figure 3k:**'}
+suppressWarnings(pie(con_freq_wt$prop, col = my_cols, labels = con_freq_wt$Alteration))
+
+suppressWarnings(pie(con_freq_b2$prop, col = my_cols_b2, labels = con_freq_b2$Alteration))
+```
+
+<br/>
+
+```{r figure_3l, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 5.5, fig.cap = '**Figure 3l:**'}
+cdk_b2_all = suppressWarnings(readr::read_csv(file = "../data/Supp_Fig2ab_CDK46_PFS_ANON.csv.gz", col_names = TRUE, col_types = cols(.default = col_character()))) %>%
+	     readr::type_convert() %>%
+	     dplyr::select(-X1) %>%
+	     dplyr::rename_all(function(x) { c("Patient.ID", "Tx.Line", "time.months", "event", "ET_partner", "B2", "cohort", "RB1_LOH") })
+
+cdk_b1 = cdk_b2_all %>%
+	 dplyr::filter(Tx.Line == 1) %>%
+	 dplyr::mutate(RB1_LOH = factor(RB1_LOH, levels = c("no_LOH", "RB1_LOH", "B2")))
+
+summary(coxph(Surv(time.months, event) ~ RB1_LOH + ET_partner, data = cdk_b1))
+
+cdk_tri.plot = survfit(Surv(time.months, event) ~ RB1_LOH, data = cdk_b1) %>%
+	       ggsurvplot(palette = c("#32b34b","#af4e9d", "#e95298"),
+			  risk.table= TRUE,
+			  tables.height = 0.20,
+			  tables.theme = theme_cleantable(),
+			  censor = TRUE,
+			  break.time.by = 12,
+			  fontsize = 3,
+			  axes.offset = FALSE,
+			  xlab = "Follow up time (mo)",
+			  xlim = c(0,72))
+
+print(cdk_tri.plot)
+```
+
+<br/>
+
+```{r figure_3m, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 3, fig.width = 6, fig.cap = '**Figure 3m:**'}
+tsg.g = suppressWarnings(readr::read_csv(file = "../data/Supp_Fig3m_TSG_gain_pre_post_ANON.csv.gz", col_names = TRUE, col_types = cols(.default = col_character()))) %>%
+	readr::type_convert() %>%
+	dplyr::select(-X1)
+
+tbl_counts = tsg.g %>%
+	     dplyr::group_by(Group.coarse) %>%
+	     dplyr::summarise(n_RB1 = sum(RB1 == 1, na.rm = TRUE),
+			      n_non_RB1 = sum(non_RB1 == 1, na.rm = TRUE),
+			      n_total = n()) %>%
+	     dplyr::ungroup()
+
+tbl_counts = tbl_counts %>%
+	     dplyr::select(Group.coarse, n_RB1, n_non_RB1, n_total) %>%
+	     tidyr::pivot_longer(cols = c(n_RB1, n_non_RB1),
+				 names_to = "status",
+				 values_to = "n") %>% 
+	     dplyr::mutate(freq = n/n_total)
+  
+tsg = tbl_counts %>%
+      dplyr::rename(Group = Group.coarse, res_type = status) %>%
+      dplyr::mutate(res_type = case_when(
+	      			res_type == "n_RB1" ~ "RB1",
+	      			TRUE ~ "Non_RB1"
+      )) %>%
+      dplyr::mutate(Group = factor(Group, levels = c( "non-HRD", "non_B2_HRD", "gBRCA2")))
+
+plot_ = tsg %>%
+	ggplot(mapping = aes(x = Group, y = freq * 100, fill = res_type)) +
+	geom_bar(stat = "identity", color = "black", position = "dodge", width = 0.7) +
+	scale_fill_manual(values = c("RB1" = "#3f60ab", "Non_RB1" = "#cce0f4")) +
+	scale_x_discrete() +
+	scale_y_continuous(expand = c(0,0),
+			   limits = c(0, 42),
+			   position = "right") +
+	xlab(" ") +
+	ylab("Frequency (%)") +
+	coord_flip() +
+	theme_minimal() +
+	theme(panel.grid = element_blank(),
+	      axis.line.x = element_line(color = "black", size = 0.5),
+	      axis.ticks.x = element_line(color = "black")) +
+	guides(fill = guide_legend(title = "Acquired CDK4/6i\nresistance"))
+print(plot_)
+```
+<br/>
