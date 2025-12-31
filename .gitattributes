@@ -1,8 +1,7 @@
 * text=auto
 *.Rmd text eol=lf
 *.rmd text eol=lf
-
 *.Rmd diff merge
 *.rmd diff merge
-
-*.[Rr]md linguist-detectable
+*.[Rr]md linguist-language=R
+*.R linguist-detectable
