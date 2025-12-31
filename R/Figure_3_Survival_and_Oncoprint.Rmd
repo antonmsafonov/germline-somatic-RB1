@@ -441,6 +441,45 @@ suppressWarnings(draw(op_pre_post, heatmap_legend_side = "bottom", annotation_le
 
 <br/>
 
+```{r figure_3i, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 4, fig.width = 7, fig.cap = '**Figure 3i:**'}
+data_ = suppressWarnings(readr::read_csv(file = '../data/Supp_Fig3i.csv.gz', col_names = TRUE, col_types = cols(.default = col_character()))) %>%
+	readr::type_convert() %>%
+	dplyr::select(-X1) %>%
+	dplyr::mutate(univariate_multivariate = case_when(
+		grepl("univariate", analysis) ~ "Non adjusted",
+		grepl("multivariate", analysis) ~ "Adjusted"
+	)) %>%
+	dplyr::mutate(pfs_os = case_when(
+		grepl("PFS", analysis) ~ "PFS",
+		grepl("OS", analysis) ~ "OS"
+	)) %>%
+	dplyr::mutate(ascn = case_when(
+		grepl("Other_LOH", ascn) ~ "RB1 other LOH",
+		grepl("Het_loss", ascn) ~ "RB1 Het Loss"
+	)) %>%
+	dplyr::mutate(pfs_os = factor(pfs_os, levels = c("OS", "PFS"), ordered = TRUE)) %>%
+	dplyr::mutate(ascn = factor(ascn, levels = c("RB1 other LOH", "RB1 Het Loss"), ordered = TRUE))
+
+plot_ = data_ %>%
+	ggplot(mapping = aes(x = estimate, y = pfs_os:ascn, xmin = conf.low, xmax = conf.high, fill = univariate_multivariate)) +
+	geom_pointrange(stat = "identity", position = position_dodge(width = 0.5), shape = 22, size = 1) +
+	scale_fill_brewer(type = "seq", palette = 1) +
+	geom_vline(xintercept = 1, linetype = 3) +
+	xlab("\nHazard ratio") +
+	ylab("") +
+	theme_bw() +
+	theme(axis.title.x = element_text(size = 14),
+	      axis.title.y = element_text(size = 14),
+	      axis.text.x = element_text(size = 12),
+	      axis.text.y = element_text(size = 12, hjust = 1),
+	      panel.grid = element_blank()) +
+	guides(fill = guide_legend(title = " "))
+
+suppressWarnings(print(plot_))
+```
+
+<br/>
+
 ```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE}
 rb1.con.hr = suppressWarnings(readr::read_csv(file = "../data/Supp_Fig3k_RB1_cons_final_ANON.csv.gz", col_names = TRUE, col_types = cols(.default = col_character()))) %>%
 	     readr::type_convert() %>%
