@@ -104,7 +104,7 @@ segmented_log2 = segmented_log2 %>%
 
 <br/>
 
-```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 5.5, fig.cap = '**Figure 4e:** $Log_2$ Ratio of chromosome 13 from sample 18bs1-Ribo-Mouse-2-Retreatment'}
+```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 5.5, fig.cap = '**Figure 4e:** $Log_2$ Ratio of chromosome 13 from sample Ribo-PDX-L-post-treatment'}
 plot_ = smoothed_log2 %>%
 	dplyr::filter(Position >= start_pos & Position <= end_pos) %>%
 	ggplot(aes(x = Position, y = Log2_Ratio)) +
@@ -146,9 +146,9 @@ suppressWarnings(grid.arrange(plot_))
 
 <br/>
 
-```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 6, fig.cap = '<br/>**Figure 4e:** Sequence alignment at exons 4--18 of RB1 from sample 18bs1-Ribo-Mouse-2-Retreatment'}
+```{r, eval = TRUE, echo = FALSE, message = FALSE, include = TRUE, fig.align = 'left', fig.height = 5, fig.width = 6, fig.cap = '<br/>**Figure 4e:** Sequence alignment at exons 4--18 of RB1 from sample Ribo-PDX-L-post-treatment'}
 ideogram_track = IdeogramTrack(genome = "hg19", chromosome = "chr13", background.title = "white", fontcolor.title = "grey35")
-alignment_track = AlignmentsTrack("../data/18bs1-Ribo-Mouse-2-Retreatment_chrN.bam", isPaired = TRUE, name = " ",
+alignment_track = AlignmentsTrack("../data/Ribo-PDX-L-post-treatment_chrN.bam", isPaired = TRUE, name = " ",
 				  background.title = "white", fontcolor.title = "grey35", col.axis = "grey50", stacking = "squish")
 
 grid.newpage()
@@ -158,14 +158,14 @@ pushViewport(viewport(layout.pos.col = 1))
 start_bp = 48919100
 end_bp = 48920200
 res = suppressWarnings(plotTracks(c(ideogram_track, alignment_track),
-				  chromosome = "chr13", main = "18bs1-Ribo-Mouse-2-Retreatment - RB1 exon 4", cex.main = .6, from = start_bp, to = end_bp, ylim = c(0,201), sizes = c(.25, 5.45), add = TRUE))
+				  chromosome = "chr13", main = "Ribo-PDX-L-post-treatment - RB1 exon 4", cex.main = .6, from = start_bp, to = end_bp, ylim = c(0,201), sizes = c(.25, 5.45), add = TRUE))
 popViewport()
 
 pushViewport(viewport(layout.pos.col = 2))
 start_bp = 49015000
 end_bp = 49016100
 res = suppressWarnings(plotTracks(c(ideogram_track, alignment_track),
-				  chromosome = "chr13", main = "18bs1-Ribo-Mouse-2-Retreatment - RB1 exon 18", cex.main = .6, from = start_bp, to = end_bp, ylim = c(0,201), sizes = c(.25, 5.45), add = TRUE))
+				  chromosome = "chr13", main = "Ribo-PDX-L-post-treatment - RB1 exon 18", cex.main = .6, from = start_bp, to = end_bp, ylim = c(0,201), sizes = c(.25, 5.45), add = TRUE))
 
 popViewport()
 ```
