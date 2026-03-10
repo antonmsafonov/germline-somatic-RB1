@@ -1,7 +1,7 @@
-# Hemizygosity and HR deficiency drive resistance in breast cancer
+# Homologous recombination deficiency and hemizygosity drive resistance in breast cancer
 
 ## Safonov *et al.*
-### https://someurl
+### https://www.nature.com/articles/s41586-026-10197-0
 &nbsp;
 &nbsp;
 &nbsp;
